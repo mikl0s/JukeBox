@@ -14,22 +14,51 @@
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--background-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
 
 /* --- Music Player Container --- */
-body { align-items: center; /* Revert to center */ }
+body { align-items: center; }
 .music-player { background-color: var(--surface-color); border-radius: var(--border-radius); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); overflow: hidden; width: 100%; max-width: 650px; display: flex; flex-direction: column; }
 
 /* --- Player Header --- */
-.player-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: #2a2a2a; border-bottom: 1px solid #444; gap: 12px; /* Adjusted gap */ }
+.player-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: #2a2a2a; border-bottom: 1px solid #444; gap: 12px; }
 
 /* Download Icon Link Styling */
-a#download-link {
-    line-height: 1; /* Align icon better */
-    flex-shrink: 0; /* Prevent shrinking */
-    margin-right: 8px; /* Space AFTER download icon */
-    color: inherit; /* Inherit color for default state */
-    text-decoration: none; /* Remove underline */
+a#download-link { line-height: 1; flex-shrink: 0; margin-right: 8px; color: inherit; text-decoration: none; }
+
+/* Title - Container for scrolling titles */
+.title-container {
+    position: relative;
+    overflow: hidden;
+    flex-grow: 1;
+    white-space: nowrap;
 }
 
-#current-track-title { font-size: 1.1em; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; /* Title takes up remaining space */ text-align: left; /* Ensure title aligns left */ }
+/* Title styling */
+#current-track-title {
+    font-size: 1.1em; 
+    color: #fff; 
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    display: inline-block;
+    position: relative;
+}
+
+/* Scrolling animation class */
+.scrolling-title {
+    animation: marquee 10s linear infinite;
+    padding-right: 50px; /* Space after text before it repeats */
+    position: absolute;
+    left: 0;
+    top: 0;
+    white-space: nowrap;
+}
+
+/* Pause animation on hover */
+.title-container:hover .scrolling-title {
+    animation-play-state: paused;
+}
+
+@keyframes marquee {
+    0% { left: 0; }
+    100% { left: -100%; }
+}
 
 /* Container for header controls */
 .header-controls { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
@@ -38,15 +67,19 @@ a#download-link {
 .header-icon { color: var(--text-muted-color); font-size: 1.1em; transition: color 0.2s ease; display: block; }
 .header-icon:hover { color: var(--primary-color); }
 
-/* Style for button containing icon */
-.icon-button {
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
+/* Specific link styling */
+a.github-icon-link {
+    text-decoration: none;
     line-height: 1;
 }
+/* Use brand color for GitHub icon */
+.fa-github:hover {
+     color: #ffffff; /* White for GitHub hover, or keep primary */
+}
+
+
+/* Style for button containing icon */
+.icon-button { background: none; border: none; padding: 0; margin: 0; cursor: pointer; line-height: 1; }
 
 #viz-style-selector { background-color: rgba(0, 0, 0, 0.5); color: var(--text-muted-color); border: 1px solid #444; border-radius: 4px; padding: 3px 5px; font-size: 0.8em; cursor: pointer; }
 #viz-style-selector:hover { color: var(--text-color); border-color: #666; }
@@ -74,21 +107,55 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 #seek-bar { flex-grow: 1; min-width: 100px; }
 #volume-bar { width: 80px; flex-shrink: 0; }
 
-/* Play mode button styling for different modes */
-#play-mode-btn .fa-repeat { color: var(--primary-color); } /* Default: Repeat All */
-#play-mode-btn.mode-repeat-one .fa-repeat { color: var(--secondary-color); } /* Repeat One */
-#play-mode-btn.mode-randomize .fa-random { color: var(--highlight-color); } /* Randomize */
-
+/* Play mode button styling */
+#play-mode-btn .fa-repeat { color: var(--primary-color); }
+#play-mode-btn.mode-repeat-one .fa-repeat { color: var(--secondary-color); }
+#play-mode-btn.mode-randomize .fa-random { color: var(--highlight-color); }
 
 /* --- Playlist --- */
 .playlist-container { padding: 15px; max-height: 300px; overflow-y: auto; background-color: var(--surface-color); }
 .playlist-container h3 { margin-bottom: 15px; font-weight: 500; color: var(--text-muted-color); border-bottom: 1px solid #444; padding-bottom: 8px; }
 .playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 15px; }
-
 .playlist-item { background-color: #404040; border-radius: var(--border-radius); padding: 10px; text-align: center; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 105px; }
 .playlist-item:hover { background-color: #555; transform: translateY(-2px); }
 .playlist-item i { font-size: 2.5em; display: block; margin-bottom: 8px; color: var(--primary-color); }
-.playlist-item-title { font-size: 0.85em; color: var(--text-color); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+
+/* Playlist item title container */
+.playlist-item-title-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.playlist-item-title { 
+    font-size: 0.85em; 
+    color: var(--text-color); 
+    display: inline-block;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Scrolling animation for playlist items */
+.playlist-item-title.scrolling-title {
+    animation: scroll-playlist-title 8s linear infinite;
+    animation-play-state: running; /* Always scroll if needed */
+    padding-right: 20px; /* Space after text before it repeats */
+}
+
+.playlist-item:hover .playlist-item-title.scrolling-title {
+    animation-play-state: paused;
+}
+
+@keyframes scroll-playlist-title {
+    0% {
+        left: 0;
+    }
+    100% {
+        left: -100%;
+    }
+}
+
 .playlist-item-count { font-size: 0.75em; color: var(--text-muted-color); display: block; margin-top: auto; }
 .playlist-item.active { background-color: var(--primary-color); color: #111; font-weight: 500; transform: translateY(0); }
 .playlist-item.active i { color: #111; }
@@ -113,6 +180,7 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 .stats-summary { background-color: #404040; padding: 15px 20px; border-radius: var(--border-radius); margin-bottom: 30px; }
 .stats-summary p { font-size: 1.1em; margin: 5px 0; }
 .stats-summary strong { color: var(--secondary-color); }
+/* Table styles - Note: Table itself is removed from HTML, keeping styles just in case */
 #stats-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 #stats-table th, #stats-table td { border-bottom: 1px solid #444; padding: 10px 8px; text-align: left; }
 #stats-table th { color: var(--text-muted-color); font-size: 0.9em; text-transform: uppercase; }

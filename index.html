@@ -5,14 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JukeBox</title> <!-- User's Title -->
     <link rel="stylesheet" href="style.css">
-    <!-- Using full FA link -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Using Font Awesome without integrity check to avoid errors -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <!-- User's Favicon / App Icon links -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
+    <style>
+        /* Styles for stats modal only */
+        .summary-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .summary-stats p {
+            flex: 1;
+            text-align: center;
+            margin: 0 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="music-player">
@@ -22,8 +35,13 @@
             <a id="download-link" href="#" download title="Download current track">
                  <i class="fas fa-download header-icon"></i>
             </a>
-            <span id="current-track-title">Loading Playlist...</span>
+            <div class="title-container">
+                <span id="current-track-title">Loading Playlist...</span>
+            </div>
             <div class="header-controls">
+                <a href="https://github.com/mikl0s/JukeBox" target="_blank" rel="noopener noreferrer" title="View on GitHub">
+                    <i class="fab fa-github header-icon"></i>
+                </a>
                 <select id="viz-style-selector" title="Visualization Style">
                     <option value="bars">Bars</option>
                     <option value="bars_blocks">Blocks</option>
@@ -71,15 +89,13 @@
             <h1>Jukebox Statistics</h1>
             <div class="stats-summary">
                 <h2>Summary</h2>
-                <p>Total Page Visits: <strong id="total-visits">Loading...</strong></p>
+                <div class="summary-stats">
+                    <p>Total Page Visits: <strong id="total-visits">Loading...</strong></p>
+                    <p>Total Plays: <strong id="total-plays">Loading...</strong></p>
+                    <p>Total Downloads: <strong id="total-downloads">Loading...</strong></p>
+                </div>
             </div>
-            <h2>Track Plays & Downloads</h2>
-            <div style="max-height: 30vh; overflow-y: auto; margin-bottom: 20px;">
-                <table id="stats-table">
-                    <thead> <tr><th>Track</th><th>Plays</th><th>Downloads</th></tr> </thead>
-                    <tbody id="stats-table-body"><tr><td colspan="3">Loading...</td></tr></tbody>
-                </table>
-            </div>
+
             <h2>Activity (Last <span id="stats-days-display">7</span> Days)</h2>
             <div class="stats-chart-container">
                 <canvas id="activityChart"></canvas>

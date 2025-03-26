@@ -20,7 +20,6 @@ const dbPath = path.join(projectRoot, dbFilename);
 // Use environment variable for stats days, fallback to 7
 const STATS_DAYS = parseInt(process.env.STATS_DAYS || '7', 10);
 
-
 // --- Initialize LokiJS Database ---
 let playsCollection; // Tracks totals per song { filename, play_count, download_count }
 let statsCollection; // Tracks overall total visits { type: 'totalVisits', count }
@@ -87,15 +86,23 @@ function getLocalDateString(date) {
     // Ensures YYYY-MM-DD format based on the server's local timezone
     // Crucially handles timezone offset to get the date *as it is on the server*
     const offset = date.getTimezoneOffset(); // Offset in minutes
-    const adjustedDate = new Date(date.getTime() - (offset*60*1000));
+    const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
     return adjustedDate.toISOString().split('T')[0];
 }
-
 
 // --- Middleware ---
 app.use(express.json()); // To parse JSON request bodies for POST
 
 // --- API Endpoints ---
+
+// GET /api/config - Expose environment variables to client
+app.get('/api/config', (req, res) => {
+    console.log('[Server] API request: /api/config');
+    res.json({
+        playlistPrefixFilter: process.env.PLAYLIST_PREFIX_FILTER || '',
+        debugLogging: process.env.DEBUG_LOGGING === 'true'
+    });
+});
 
 // GET /api/music - Returns sorted list of { filename, play_count, download_count }
 app.get('/api/music', async (req, res) => {
@@ -116,7 +123,6 @@ app.get('/api/music', async (req, res) => {
              return res.json([]);
         }
 
-
         // Filter valid music files (basenames without extension) - async filtering
         const readDirPromises = files.map(async (file) => {
             const filePath = path.join(musicDir, file);
@@ -125,7 +131,7 @@ app.get('/api/music', async (req, res) => {
                 if (stats.isFile() && path.extname(file).toLowerCase() === allowedExtension) {
                     return path.basename(file, allowedExtension);
                 }
-            } catch (statErr){ console.warn(`[Server] Error stating file ${filePath}:`, statErr.message); }
+            } catch (statErr) { console.warn(`[Server] Error stating file ${filePath}:`, statErr.message); }
             return null;
         });
         const currentMusicFiles = (await Promise.all(readDirPromises)).filter(Boolean);
@@ -340,7 +346,7 @@ function shutdown() {
         db.close(closeErr => { // Close connection
             if (closeErr) console.error('[Server] Error closing LokiJS database:', closeErr);
             else console.log('[Server] LokiJS database closed.');
-            process.exit(saveErr || closeErr ? 1:0); // Exit cleanly or with error
+            process.exit(saveErr || closeErr ? 1 : 0); // Exit cleanly or with error
         });
     });
 }
