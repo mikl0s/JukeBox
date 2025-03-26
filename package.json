@@ -1,0 +1,36 @@
+{
+  "name": "jukebox",
+  "version": "1.0.0",
+  "description": "A sleek web-based music player with dynamic playlist loading, stats, and play/download tracking using Node.js and LokiJS.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "music",
+    "player",
+    "html",
+    "css",
+    "javascript",
+    "node",
+    "express",
+    "audio",
+    "visualization",
+    "lokijs",
+    "jukebox",
+    "in-memory",
+    "database",
+    "stats",
+    "chartjs",
+    "dotenv"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chart.js": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "lokijs": "latest"
+  }
+}

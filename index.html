@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JukeBox</title> <!-- User's Title -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Using full FA link -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- User's Favicon / App Icon links -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+    <div class="music-player">
+
+        <!-- Player Header -->
+        <div class="player-header">
+            <a id="download-link" href="#" download title="Download current track">
+                 <i class="fas fa-download header-icon"></i>
+            </a>
+            <span id="current-track-title">Loading Playlist...</span>
+            <div class="header-controls">
+                <select id="viz-style-selector" title="Visualization Style">
+                    <option value="bars">Bars</option>
+                    <option value="bars_blocks">Blocks</option>
+                    <option value="waveform">Waveform</option>
+                </select>
+                <button id="stats-icon-btn" class="icon-button" title="View Stats">
+                    <i class="fas fa-chart-line header-icon"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Visualization Container -->
+        <div class="visualization-container">
+            <canvas id="visualizer-canvas"></canvas>
+        </div>
+
+        <audio id="audio-player" preload="metadata"></audio>
+
+        <!-- Controls Section -->
+        <div class="controls">
+            <button id="prev-btn" title="Previous" disabled><i class="fas fa-backward-step"></i></button>
+            <button id="play-pause-btn" title="Play/Pause" disabled><i class="fas fa-play"></i></button>
+            <button id="next-btn" title="Next" disabled><i class="fas fa-forward-step"></i></button>
+            <span id="time-indicator">0:00 / 0:00</span>
+            <input type="range" id="seek-bar" value="0" step="0.1" title="Seek" disabled>
+            <button id="volume-icon" title="Mute/Unmute"><i class="fas fa-volume-up"></i></button>
+            <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="1" title="Volume">
+            <button id="play-mode-btn" title="Repeat All"><i class="fas fa-repeat"></i></button>
+        </div>
+
+        <!-- Playlist Section -->
+        <div class="playlist-container">
+            <h3>Playlist</h3>
+            <div id="playlist" class="playlist-grid">
+                <div class="playlist-item-loading">Loading...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Stats Modal Structure -->
+    <div id="stats-modal-overlay" class="modal-overlay hidden">
+        <div id="stats-modal-content" class="modal-content stats-container">
+            <button id="modal-close-btn" class="modal-close-btn">×</button>
+            <h1>Jukebox Statistics</h1>
+            <div class="stats-summary">
+                <h2>Summary</h2>
+                <p>Total Page Visits: <strong id="total-visits">Loading...</strong></p>
+            </div>
+            <h2>Track Plays & Downloads</h2>
+            <div style="max-height: 30vh; overflow-y: auto; margin-bottom: 20px;">
+                <table id="stats-table">
+                    <thead> <tr><th>Track</th><th>Plays</th><th>Downloads</th></tr> </thead>
+                    <tbody id="stats-table-body"><tr><td colspan="3">Loading...</td></tr></tbody>
+                </table>
+            </div>
+            <h2>Activity (Last <span id="stats-days-display">7</span> Days)</h2>
+            <div class="stats-chart-container">
+                <canvas id="activityChart"></canvas>
+                <!-- Placeholder text removed -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Player Client-side JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>

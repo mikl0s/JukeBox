@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jukebox Stats</title>
+    <link rel="stylesheet" href="style.css"> <!-- Use the same stylesheet -->
+    <style>
+        /* Optional: Add specific overrides for stats page if needed */
+        body {
+            align-items: flex-start; /* Allow content to start at top */
+        }
+    </style>
+</head>
+<body>
+    <div class="stats-container">
+        <h1>Jukebox Statistics</h1>
+
+        <div class="stats-summary">
+            <h2>Summary</h2>
+            <p>Total Page Visits: <strong id="total-visits">Loading...</strong></p>
+            <!-- Add more summary stats here if desired -->
+        </div>
+
+        <h2>Track Plays & Downloads</h2>
+        <table id="stats-table">
+            <thead>
+                <tr>
+                    <th>Track</th>
+                    <th>Plays</th>
+                    <th>Downloads</th>
+                </tr>
+            </thead>
+            <tbody id="stats-table-body">
+                <tr><td colspan="3">Loading stats...</td></tr>
+            </tbody>
+        </table>
+
+         <h2>Activity (Placeholder)</h2>
+         <div class="stats-chart-container">
+            <canvas id="activityChart"></canvas>
+            <p style="text-align: center; font-size: 0.8em; color: var(--text-muted-color); margin-top: 10px;">
+                (Note: Daily graph data is currently placeholder.)
+            </p>
+         </div>
+
+         <div class="back-link-container">
+            <a href="/" class="back-link">« Back to Player</a>
+         </div>
+    </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Stats Page Client-side JavaScript -->
+    <script src="stats.js"></script>
+</body>
+</html>
