@@ -150,22 +150,30 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 /* Common playlist item styles */
 .playlist-item { background-color: #404040; border-radius: var(--border-radius); cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; overflow: hidden; }
 .playlist-item:hover { background-color: #555; }
+.playlist-item-count { font-size: 0.75em; color: var(--text-muted-color); display: block; margin-top: auto; }
 
 /* Grid view specific styles */
 .playlist-grid .playlist-item { padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; min-height: 105px; }
 .playlist-grid .playlist-item:hover { transform: translateY(-2px); }
 .playlist-grid .playlist-item i { font-size: 2.5em; display: block; margin-bottom: 8px; color: var(--primary-color); }
+.playlist-grid .playlist-item.active { background-color: var(--primary-color); color: #111; font-weight: 500; transform: translateY(0); }
+.playlist-grid .playlist-item.active i { color: #111; }
+.playlist-grid .playlist-item.active .playlist-item-title { color: #111; font-weight: 600; }
+.playlist-grid .playlist-item.active .playlist-item-count { color: #444; }
 
 /* List view layout */
 .playlist-list { display: flex; flex-direction: column; gap: 2px; }
-.playlist-list .playlist-item { display: grid; grid-template-columns: 35px 2fr 1.5fr 80px 80px 70px; gap: 10px; align-items: center; padding: 6px 10px; min-height: auto; border-radius: 4px; text-align: left; }
-.playlist-list .playlist-item:hover { transform: none; }
-.playlist-list .playlist-item i { font-size: 1.2em; margin: 0; justify-self: center; color: var(--primary-color); }
-.playlist-list .playlist-item-title-container { margin: 0; }
+.playlist-list .playlist-item { display: grid !important; grid-template-columns: 35px 2fr 1.5fr 80px 80px 70px; gap: 10px; align-items: center; padding: 6px 10px !important; min-height: auto !important; border-radius: 4px; text-align: left; flex-direction: row !important; }
+.playlist-list .playlist-item:hover { transform: none !important; }
+.playlist-list .playlist-item i { font-size: 1.2em !important; margin: 0 !important; justify-self: center; color: var(--primary-color); display: inline-block !important; }
+.playlist-list .playlist-item-title-container { margin: 0 !important; }
 .playlist-list .playlist-item-title { font-size: 0.9em; }
 .playlist-list .playlist-item-artist { font-size: 0.85em; color: var(--text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .playlist-list .playlist-item-duration, .playlist-list .playlist-item-bitrate, .playlist-list .playlist-item-plays { font-size: 0.85em; color: var(--text-muted-color); text-align: center; }
-.playlist-list .playlist-item-count { display: none; } /* Hide play count badge in list view */
+.playlist-list .playlist-item-count { display: none !important; }
+.playlist-list .playlist-item.active { background-color: var(--primary-color); color: #111; font-weight: 500; transform: none !important; }
+.playlist-list .playlist-item.active i { color: #111; }
+.playlist-list .playlist-item.active .playlist-item-title { color: #111; font-weight: 600; }
 .playlist-list .playlist-item.active .playlist-item-artist,
 .playlist-list .playlist-item.active .playlist-item-duration,
 .playlist-list .playlist-item.active .playlist-item-bitrate,
@@ -207,11 +215,6 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
     100% { transform: translateX(0); }
 }
 
-.playlist-item-count { font-size: 0.75em; color: var(--text-muted-color); display: block; margin-top: auto; }
-.playlist-item.active { background-color: var(--primary-color); color: #111; font-weight: 500; transform: translateY(0); }
-.playlist-item.active i { color: #111; }
-.playlist-item.active .playlist-item-title { color: #111; font-weight: 600; }
-.playlist-item.active .playlist-item-count { color: #444; }
 .playlist-item-loading, .loading-error { grid-column: 1 / -1; text-align: center; color: var(--text-muted-color); padding: 20px; }
 .loading-error { color: var(--secondary-color); }
 

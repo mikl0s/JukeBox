@@ -1380,43 +1380,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function switchSource(newSource) {
-        if (newSource === currentSource) return; // Already on this source
-
-        log(`[Client] Switching source from ${currentSource} to ${newSource}`);
-
-        // Stop current playback and clear audio source
-        pauseSong();
-        if (audioPlayer) {
-            audioPlayer.src = '';
-            audioPlayer.load(); // Reset the player
+        if (newSource === currentSource) {
+            log(`[Client] Already on ${newSource} source`);
+            return;
         }
 
+        log(`[Client] === SOURCE SWITCH: ${currentSource} -> ${newSource} ===`);
+
+        // Save current state before switching
+        saveToLocalStorage();
+
+        // Stop playback completely
+        pauseSong();
+        isTrackedForPlay = false;
+
+        // Clear audio player
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer.src = '';
+            try {
+                audioPlayer.load();
+            } catch (e) {
+                // Expected error for empty source
+            }
+        }
+
+        // Update source BEFORE fetching
+        const oldSource = currentSource;
         currentSource = newSource;
+        log(`[Client] currentSource now: ${currentSource}`);
         updateSourceButtons();
 
         // Fetch new playlist
-        await fetchPlaylist(currentSource);
+        try {
+            await fetchPlaylist(currentSource);
+            log(`[Client] Fetched ${songs.length} songs for ${currentSource}`);
 
-        // Restore the saved song index for this source
-        if (songs.length > 0) {
-            const savedSettings = localStorage.getItem('jukeboxSettings');
-            if (savedSettings) {
-                const parsedData = JSON.parse(savedSettings);
-                const indexToRestore = currentSource === 'youtube'
-                    ? (parsedData.youtubeSongIndex || 0)
-                    : (parsedData.musicSongIndex || 0);
-                currentSongIndex = Math.min(indexToRestore, songs.length - 1); // Ensure valid index
-                log(`[Client] Restored index ${currentSongIndex} for ${currentSource} source`);
+            if (songs.length > 0) {
+                const savedSettings = localStorage.getItem('jukeboxSettings');
+                let indexToRestore = 0;
+
+                if (savedSettings) {
+                    const parsedData = JSON.parse(savedSettings);
+                    indexToRestore = currentSource === 'youtube'
+                        ? (parsedData.youtubeSongIndex || 0)
+                        : (parsedData.musicSongIndex || 0);
+                    indexToRestore = Math.min(indexToRestore, songs.length - 1);
+                }
+
+                currentSongIndex = indexToRestore;
+                log(`[Client] Loading song ${currentSongIndex}: ${songs[currentSongIndex]?.filename || 'Unknown'}`);
+                loadSong(currentSongIndex);
             } else {
-                currentSongIndex = 0;
+                displayPlaylistMessage(`No ${newSource} files found.`);
+                disableControls();
             }
-            loadSong(currentSongIndex);
-        } else {
-            displayPlaylistMessage(`No ${newSource} files found.`);
-            disableControls();
-        }
 
-        saveToLocalStorage();
+            saveToLocalStorage();
+            log(`[Client] === SWITCH COMPLETE: on ${currentSource} ===`);
+        } catch (error) {
+            log(`[Client] Switch error: ${error}`, true);
+            currentSource = oldSource;
+            updateSourceButtons();
+        }
     }
 
     async function switchView(newView) {
