@@ -938,9 +938,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Local Storage Functions ---
     function saveToLocalStorage() {
         try {
+            // Load existing data to preserve indices for other sources
+            const existing = JSON.parse(localStorage.getItem('jukeboxSettings') || '{}');
+
             // Save current song index, volume, visualization style, play mode, and source
             const dataToSave = {
                 currentSongIndex: currentSongIndex,
+                musicSongIndex: currentSource === 'music' ? currentSongIndex : (existing.musicSongIndex || 0),
+                youtubeSongIndex: currentSource === 'youtube' ? currentSongIndex : (existing.youtubeSongIndex || 0),
                 volume: audioPlayer ? audioPlayer.volume : 1,
                 visualizationStyle: visualizationStyleSelector ? visualizationStyleSelector.value : 'bars',
                 playMode: playMode, // Save play mode (repeat-all, repeat-one, shuffle)
@@ -960,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
                 log('[Client] Loaded settings from local storage');
-                
+
                 // Restore volume if available
                 if (parsedData.volume !== undefined && audioPlayer) {
                     audioPlayer.volume = parsedData.volume;
@@ -968,14 +973,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateVolumeIcon(parsedData.volume);
                     log(`[Client] Restored volume: ${parsedData.volume}`);
                 }
-                
+
                 // Restore visualization style if available
                 if (parsedData.visualizationStyle && visualizationStyleSelector) {
                     visualizationStyleSelector.value = parsedData.visualizationStyle;
                     currentVisualizationStyle = parsedData.visualizationStyle;
                     log(`[Client] Restored visualization style: ${parsedData.visualizationStyle}`);
                 }
-                
+
                 // Restore play mode if available
                 if (parsedData.playMode) {
                     playMode = parsedData.playMode;
@@ -989,8 +994,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     log(`[Client] Restored source: ${currentSource}`);
                 }
 
-                // Return the saved song index to be used when loading the playlist
-                return parsedData.currentSongIndex;
+                // Return the saved song index for the CURRENT source
+                const indexToRestore = currentSource === 'youtube'
+                    ? (parsedData.youtubeSongIndex || 0)
+                    : (parsedData.musicSongIndex || 0);
+                log(`[Client] Restoring index ${indexToRestore} for ${currentSource} source`);
+                return indexToRestore;
             }
         } catch (error) {
             log('[Client] Error loading from local storage: ' + error.message, false, true);
