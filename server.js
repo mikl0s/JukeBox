@@ -107,29 +107,71 @@ app.get('/api/config', (req, res) => {
     });
 });
 
-// Helper function to get music from a specific directory
-async function getMusicFromDirectory(directory, source = 'music') {
-    // 1. Read directory
-    let files = [];
+// Helper function to recursively scan directories for MP3 files
+async function scanDirectoryRecursive(directory, baseDir = directory) {
+    let mp3Files = [];
+
     try {
-         files = await fs.readdir(directory);
-    } catch (dirErr) {
-         console.error(`[Server] Error reading ${source} directory "${directory}":`, dirErr);
-         return [];
+        const items = await fs.readdir(directory);
+
+        for (const item of items) {
+            const itemPath = path.join(directory, item);
+            try {
+                const stats = await fs.stat(itemPath);
+
+                if (stats.isDirectory()) {
+                    // Recursively scan subdirectory
+                    const subFiles = await scanDirectoryRecursive(itemPath, baseDir);
+                    mp3Files = mp3Files.concat(subFiles);
+                } else if (stats.isFile() && path.extname(item).toLowerCase() === allowedExtension) {
+                    // Store relative path from base directory (e.g., "Mixed/songname" or "Album1/songname")
+                    const relativePath = path.relative(baseDir, itemPath);
+                    // Remove .mp3 extension but keep the folder structure
+                    // Convert to forward slashes for URL compatibility
+                    const urlPath = relativePath.replace(/\.mp3$/i, '').replace(/\\/g, '/');
+                    mp3Files.push(urlPath);
+                }
+            } catch (statErr) {
+                console.warn(`[Server] Error stating ${itemPath}:`, statErr.message);
+            }
+        }
+    } catch (readErr) {
+        console.error(`[Server] Error reading directory "${directory}":`, readErr.message);
     }
 
-    // Filter valid music files (basenames without extension) - async filtering
-    const readDirPromises = files.map(async (file) => {
-        const filePath = path.join(directory, file);
-        try {
-            const stats = await fs.stat(filePath);
-            if (stats.isFile() && path.extname(file).toLowerCase() === allowedExtension) {
-                return path.basename(file, allowedExtension);
-            }
-        } catch (statErr) { console.warn(`[Server] Error stating file ${filePath}:`, statErr.message); }
-        return null;
-    });
-    const currentMusicFiles = (await Promise.all(readDirPromises)).filter(Boolean);
+    return mp3Files;
+}
+
+// Helper function to get music from a specific directory
+async function getMusicFromDirectory(directory, source = 'music') {
+    // 1. Read directory (recursively for YouTube to scan Mixed/, Album folders, etc.)
+    let currentMusicFiles = [];
+
+    try {
+        if (source === 'youtube') {
+            // Recursively scan all subdirectories for YouTube source
+            currentMusicFiles = await scanDirectoryRecursive(directory);
+        } else {
+            // For music source, only scan top level (original behavior)
+            const files = await fs.readdir(directory);
+            const readDirPromises = files.map(async (file) => {
+                const filePath = path.join(directory, file);
+                try {
+                    const stats = await fs.stat(filePath);
+                    if (stats.isFile() && path.extname(file).toLowerCase() === allowedExtension) {
+                        return path.basename(file, allowedExtension);
+                    }
+                } catch (statErr) {
+                    console.warn(`[Server] Error stating file ${filePath}:`, statErr.message);
+                }
+                return null;
+            });
+            currentMusicFiles = (await Promise.all(readDirPromises)).filter(Boolean);
+        }
+    } catch (dirErr) {
+        console.error(`[Server] Error reading ${source} directory "${directory}":`, dirErr);
+        return [];
+    }
 
     // 2. Get play counts from LokiJS collection
     const playCountDocs = playsCollection.find();
