@@ -6,9 +6,18 @@ const NodeID3 = require('node-id3');
 // Configuration
 const YOUTUBE_FOLDER = path.join(__dirname, 'youtube');
 const MIXED_FOLDER = path.join(YOUTUBE_FOLDER, 'Mixed');
+const COOKIES_FILE = process.env.YOUTUBE_COOKIES_FILE || null;
 
 // Progress tracking
 const activeDownloads = new Map(); // Map<downloadId, progressData>
+
+// Helper to add cookies option if available
+function addCookiesOption(options = {}) {
+  if (COOKIES_FILE) {
+    options.cookies = COOKIES_FILE;
+  }
+  return options;
+}
 
 // Ensure folders exist
 async function ensureFolders() {
@@ -60,12 +69,11 @@ function clearDownload(downloadId) {
 // Detect if URL is a playlist
 async function detectPlaylist(url) {
   try {
-    const info = await ytDlp(url, {
+    const info = await ytDlp(url, addCookiesOption({
       dumpSingleJson: true,
       noWarnings: true,
       flatPlaylist: true,
-      cookiesFromBrowser: 'chrome',
-    });
+    }));
 
     if (info._type === 'playlist') {
       return {
@@ -105,12 +113,11 @@ async function downloadVideo(url, options = {}) {
     });
 
     // Get video info
-    const info = await ytDlp(url, {
+    const info = await ytDlp(url, addCookiesOption({
       dumpSingleJson: true,
       noWarnings: true,
       noCallHome: true,
-      cookiesFromBrowser: 'chrome',
-    });
+    }));
 
     const title = info.title || 'Unknown Title';
     const artist = info.uploader || info.channel || 'Unknown Artist';
@@ -164,13 +171,12 @@ async function downloadVideo(url, options = {}) {
         status: `Downloading video: ${title}...`
       });
 
-      await ytDlp(url, {
+      await ytDlp(url, addCookiesOption({
         format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
         output: videoPath,
         noWarnings: true,
         noCallHome: true,
-        cookiesFromBrowser: 'chrome',
-      });
+      }));
 
       updateProgress(downloadId, {
         stage: 'extracting_audio',
@@ -187,7 +193,7 @@ async function downloadVideo(url, options = {}) {
       status: includeVideo ? 'Extracting audio...' : `Downloading audio: ${title}...`
     });
 
-    await ytDlp(url, {
+    await ytDlp(url, addCookiesOption({
       extractAudio: true,
       audioFormat: 'mp3',
       audioQuality: 0,
@@ -196,8 +202,7 @@ async function downloadVideo(url, options = {}) {
       noCallHome: true,
       embedThumbnail: false,
       addMetadata: false,
-      cookiesFromBrowser: 'chrome',
-    });
+    }));
 
     // Add metadata
     updateProgress(downloadId, {
