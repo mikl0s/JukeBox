@@ -42,7 +42,7 @@ a#download-link { line-height: 1; flex-shrink: 0; margin-right: 8px; color: inhe
 
 /* Scrolling animation class */
 .scrolling-title {
-    animation: marquee 10s linear infinite;
+    animation: marquee var(--scroll-duration, 10s) linear infinite;
     padding-right: 50px; /* Space after text before it repeats */
     position: absolute;
     left: 0;
@@ -58,7 +58,10 @@ a#download-link { line-height: 1; flex-shrink: 0; margin-right: 8px; color: inhe
 
 @keyframes marquee {
     0% { transform: translateX(0); }
-    100% { transform: translateX(var(--scroll-distance, -100%)); }
+    70% { transform: translateX(var(--scroll-distance, -100%)); }
+    85% { transform: translateX(var(--scroll-distance, -100%)); } /* Hold for 2 seconds */
+    86% { transform: translateX(0); } /* Instant reset */
+    100% { transform: translateX(0); }
 }
 
 /* Container for header controls */
@@ -153,7 +156,7 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 
 /* Scrolling animation for playlist items */
 .playlist-item-title.scrolling-title {
-    animation: scroll-playlist-title 8s linear infinite;
+    animation: scroll-playlist-title var(--scroll-duration, 8s) linear infinite;
     animation-play-state: running; /* Always scroll if needed */
     padding-right: 20px; /* Space after text before it repeats */
     will-change: transform; /* Optimize animation performance */
@@ -164,12 +167,11 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 }
 
 @keyframes scroll-playlist-title {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(var(--scroll-distance, -100%));
-    }
+    0% { transform: translateX(0); }
+    70% { transform: translateX(var(--scroll-distance, -100%)); }
+    85% { transform: translateX(var(--scroll-distance, -100%)); } /* Hold for 2 seconds */
+    86% { transform: translateX(0); } /* Instant reset */
+    100% { transform: translateX(0); }
 }
 
 .playlist-item-count { font-size: 0.75em; color: var(--text-muted-color); display: block; margin-top: auto; }

@@ -524,9 +524,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (titleWidth > containerWidth) {
             // Calculate exact distance to scroll (including padding)
             const scrollDistance = -(titleWidth + 50); // 50px for padding-right
+            // Calculate duration based on distance for consistent speed (60px per second)
+            // Add 3 seconds for the pause at end + reset
+            const scrollTime = Math.abs(scrollDistance) / 60;
+            const totalDuration = scrollTime + 3;
             currentTrackTitleElement.style.setProperty('--scroll-distance', `${scrollDistance}px`);
+            currentTrackTitleElement.style.setProperty('--scroll-duration', `${totalDuration}s`);
             currentTrackTitleElement.classList.add('scrolling-title');
-            log(`[Client] Title scrolling activated (${titleWidth}px > ${containerWidth}px, distance: ${scrollDistance}px)`);
+            log(`[Client] Title scrolling activated (${titleWidth}px > ${containerWidth}px, distance: ${scrollDistance}px, duration: ${totalDuration.toFixed(1)}s)`);
         } else {
             log(`[Client] Title fits container (${titleWidth}px <= ${containerWidth}px)`);
         }
@@ -903,7 +908,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (title.scrollWidth > titleContainer.clientWidth) {
                     // Calculate exact distance to scroll (including padding)
                     const scrollDistance = -(title.scrollWidth + 20); // 20px for padding-right
+                    // Calculate duration based on distance for consistent speed (80px per second for smaller text)
+                    // Add 3 seconds for the pause at end + reset
+                    const scrollTime = Math.abs(scrollDistance) / 80;
+                    const totalDuration = scrollTime + 3;
                     title.style.setProperty('--scroll-distance', `${scrollDistance}px`);
+                    title.style.setProperty('--scroll-duration', `${totalDuration}s`);
                     title.classList.add('scrolling-title');
                 }
             }, 100); // Small delay to ensure DOM is fully rendered
