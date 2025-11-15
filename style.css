@@ -126,6 +126,8 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 .source-btn.active { background-color: var(--primary-color); color: #111; border-color: var(--primary-color); font-weight: 600; }
 .source-btn.active:hover { background-color: var(--primary-color); opacity: 0.9; }
 .source-btn i { font-size: 1em; }
+.source-btn.download-btn { background-color: var(--secondary-color); border-color: var(--secondary-color); color: #fff; }
+.source-btn.download-btn:hover { opacity: 0.9; background-color: var(--secondary-color); }
 
 .playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 15px; }
 .playlist-item { background-color: #404040; border-radius: var(--border-radius); padding: 10px; text-align: center; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 105px; }
@@ -199,6 +201,57 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 #stats-table td { font-size: 0.95em; }
 #stats-table td:nth-child(2), #stats-table td:nth-child(3) { text-align: right; font-feature-settings: "tnum"; }
 .stats-chart-container { margin-top: 20px; background-color: #404040; padding: 20px; border-radius: var(--border-radius); }
+
+/* --- YouTube Download Modal Styles --- */
+.youtube-container { background-color: var(--surface-color); border-radius: var(--border-radius); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); padding: 25px 35px; width: 90%; max-width: 600px; margin: 0; color: var(--text-color); }
+.youtube-container h1 { color: var(--primary-color); border-bottom: 1px solid #555; padding-bottom: 15px; margin-bottom: 25px; font-size: 1.8em; display: flex; align-items: center; gap: 12px; }
+.youtube-container h1 i { color: #ff0000; }
+.youtube-container h3 { color: var(--primary-color); margin-bottom: 15px; }
+
+/* Input Section */
+.youtube-input-section { margin-bottom: 25px; }
+.youtube-input-section label { display: block; margin-bottom: 8px; color: var(--text-muted-color); font-size: 0.9em; }
+.youtube-input-section input[type="text"] { width: 100%; padding: 12px; background-color: #404040; border: 1px solid #555; border-radius: var(--border-radius); color: var(--text-color); font-size: 1em; margin-bottom: 12px; }
+.youtube-input-section input[type="text"]:focus { outline: none; border-color: var(--primary-color); }
+.youtube-input-section input[type="text"]::placeholder { color: #888; }
+
+/* Action Buttons */
+.youtube-action-btn { background-color: var(--primary-color); color: #111; border: none; border-radius: var(--border-radius); padding: 12px 24px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+.youtube-action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.youtube-action-btn:active { transform: translateY(0); }
+.youtube-action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.download-btn-primary { background-color: var(--secondary-color); color: #fff; margin-top: 15px; }
+
+/* Info Section */
+.youtube-info-section { background-color: #404040; padding: 20px; border-radius: var(--border-radius); margin-bottom: 20px; }
+.youtube-info-content { margin-bottom: 15px; }
+.youtube-info-content p { margin: 8px 0; line-height: 1.6; }
+.youtube-info-content strong { color: var(--primary-color); }
+.youtube-info-content .playlist-badge { display: inline-block; background-color: var(--secondary-color); color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; margin-left: 8px; }
+
+/* Options */
+.youtube-options { margin-top: 20px; }
+.youtube-options label { display: block; margin-bottom: 8px; color: var(--text-muted-color); font-size: 0.9em; }
+.youtube-options input[type="text"] { width: 100%; padding: 10px; background-color: #333; border: 1px solid #555; border-radius: var(--border-radius); color: var(--text-color); font-size: 0.95em; }
+.youtube-options input[type="text"]:focus { outline: none; border-color: var(--primary-color); }
+
+/* Progress Section */
+.youtube-progress-section { background-color: #404040; padding: 20px; border-radius: var(--border-radius); margin-bottom: 20px; }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.progress-header h3 { margin: 0; color: var(--primary-color); }
+#progress-status { color: var(--text-muted-color); font-size: 0.9em; }
+.progress-bar-container { width: 100%; height: 30px; background-color: #333; border-radius: 15px; overflow: hidden; margin-bottom: 15px; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); border-radius: 15px; transition: width 0.3s ease; width: 0%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 0.85em; }
+.progress-details { color: var(--text-muted-color); font-size: 0.9em; line-height: 1.6; }
+
+/* Results Section */
+.youtube-results-section { background-color: #404040; padding: 20px; border-radius: var(--border-radius); margin-bottom: 20px; }
+.download-results { margin-bottom: 20px; }
+.download-results p { margin: 8px 0; line-height: 1.6; }
+.download-results strong { color: var(--primary-color); }
+.result-success { color: #4caf50; }
+.result-warning { color: #ff9800; }
+.result-error { color: var(--secondary-color); }
 
 /* --- Utility --- */
 .hidden { display: none !important; }

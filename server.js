@@ -4,6 +4,7 @@ const express = require('express');
 const fs = require('fs').promises; // Use the promise-based fs module
 const path = require('path');
 const loki = require('lokijs'); // Import LokiJS
+const youtubeApi = require('./youtube-downloader-api'); // YouTube downloader API
 
 const app = express();
 // Use environment variable for port, fallback to 4000
@@ -326,6 +327,81 @@ app.get('/api/stats', (req, res) => {
     } catch (error) {
         console.error("[Server] Error fetching stats:", error);
         res.status(500).json({ error: 'Failed to fetch stats.' });
+    }
+});
+
+// --- YouTube Download API ---
+
+// GET /api/youtube/albums - Get list of albums (folders)
+app.get('/api/youtube/albums', async (req, res) => {
+    console.log('[Server] API request: /api/youtube/albums');
+    try {
+        const result = await youtubeApi.getAlbums();
+        res.json(result);
+    } catch (error) {
+        console.error('[Server] Error getting albums:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/youtube/album/:name - Get files in specific album
+app.get('/api/youtube/album/:name', async (req, res) => {
+    const albumName = req.params.name;
+    console.log(`[Server] API request: /api/youtube/album/${albumName}`);
+    try {
+        const result = await youtubeApi.getAlbumFiles(albumName);
+        res.json(result);
+    } catch (error) {
+        console.error(`[Server] Error getting album files for ${albumName}:`, error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/youtube/detect - Detect if URL is a playlist
+app.post('/api/youtube/detect', async (req, res) => {
+    const { url } = req.body;
+    console.log(`[Server] API request: /api/youtube/detect - ${url}`);
+
+    if (!url || typeof url !== 'string') {
+        return res.status(400).json({ success: false, error: 'Invalid URL' });
+    }
+
+    try {
+        const result = await youtubeApi.detectPlaylist(url);
+        res.json(result);
+    } catch (error) {
+        console.error('[Server] Error detecting playlist:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/youtube/download - Download video or playlist
+app.post('/api/youtube/download', async (req, res) => {
+    const { url, albumName, isPlaylist } = req.body;
+    console.log(`[Server] API request: /api/youtube/download - ${url}`);
+
+    if (!url || typeof url !== 'string') {
+        return res.status(400).json({ success: false, error: 'Invalid URL' });
+    }
+
+    try {
+        // Set up progress callback to send updates
+        const progressCallback = (progress) => {
+            // For now, just log progress. In a real implementation, you'd use WebSockets or SSE
+            console.log('[Server] Download progress:', progress.stage, progress);
+        };
+
+        let result;
+        if (isPlaylist) {
+            result = await youtubeApi.downloadPlaylist(url, albumName, progressCallback);
+        } else {
+            result = await youtubeApi.downloadVideo(url, albumName, progressCallback);
+        }
+
+        res.json(result);
+    } catch (error) {
+        console.error('[Server] Error downloading:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

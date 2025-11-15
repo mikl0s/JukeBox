@@ -32,6 +32,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let activityChart = null; // Chart instance
     const statsDaysDisplay = document.getElementById('stats-days-display'); // For chart title
 
+    // --- YouTube Modal Elements ---
+    const youtubeDownloadButton = document.getElementById('youtube-download-btn');
+    const youtubeModalOverlay = document.getElementById('youtube-modal-overlay');
+    const youtubeModalContent = document.getElementById('youtube-modal-content');
+    const youtubeModalCloseButton = document.getElementById('youtube-modal-close-btn');
+    const youtubeUrlInput = document.getElementById('youtube-url-input');
+    const detectButton = document.getElementById('detect-btn');
+    const youtubeInfoSection = document.getElementById('youtube-info-section');
+    const youtubeInfoContent = document.getElementById('youtube-info-content');
+    const albumNameInput = document.getElementById('album-name-input');
+    const downloadStartButton = document.getElementById('download-start-btn');
+    const youtubeProgressSection = document.getElementById('youtube-progress-section');
+    const progressStatus = document.getElementById('progress-status');
+    const progressBar = document.getElementById('progress-bar');
+    const progressDetails = document.getElementById('progress-details');
+    const youtubeResultsSection = document.getElementById('youtube-results-section');
+    const downloadResults = document.getElementById('download-results');
+    const closeAndRefreshButton = document.getElementById('close-and-refresh-btn');
+    let currentYoutubeInfo = null;
+
     // --- Visualization Elements ---
     const canvas = document.getElementById('visualizer-canvas');
     const canvasContext = canvas ? canvas.getContext('2d') : null;

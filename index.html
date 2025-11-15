@@ -83,6 +83,9 @@
                     <button id="source-youtube-btn" class="source-btn" data-source="youtube">
                         <i class="fab fa-youtube"></i> YouTube
                     </button>
+                    <button id="youtube-download-btn" class="source-btn download-btn" title="Download from YouTube">
+                        <i class="fas fa-download"></i>
+                    </button>
                 </div>
             </div>
             <div id="playlist" class="playlist-grid">
@@ -110,6 +113,54 @@
             <div class="stats-chart-container">
                 <canvas id="activityChart"></canvas>
                 <!-- Placeholder text removed -->
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube Download Modal -->
+    <div id="youtube-modal-overlay" class="modal-overlay hidden">
+        <div id="youtube-modal-content" class="modal-content youtube-container">
+            <button id="youtube-modal-close-btn" class="modal-close-btn">×</button>
+            <h1><i class="fab fa-youtube"></i> Download from YouTube</h1>
+
+            <div class="youtube-input-section">
+                <label for="youtube-url-input">YouTube URL</label>
+                <input type="text" id="youtube-url-input" placeholder="https://www.youtube.com/watch?v=... or playlist URL" />
+                <button id="detect-btn" class="youtube-action-btn">
+                    <i class="fas fa-search"></i> Detect
+                </button>
+            </div>
+
+            <div id="youtube-info-section" class="youtube-info-section hidden">
+                <div id="youtube-info-content"></div>
+
+                <div class="youtube-options">
+                    <label for="album-name-input">Album Name (optional for playlists, required for single videos to group)</label>
+                    <input type="text" id="album-name-input" placeholder="Leave empty for 'Mixed' folder" />
+                </div>
+
+                <button id="download-start-btn" class="youtube-action-btn download-btn-primary">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+
+            <div id="youtube-progress-section" class="youtube-progress-section hidden">
+                <div class="progress-header">
+                    <h3>Download Progress</h3>
+                    <div id="progress-status">Preparing...</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div id="progress-details" class="progress-details"></div>
+            </div>
+
+            <div id="youtube-results-section" class="youtube-results-section hidden">
+                <h3>Download Complete!</h3>
+                <div id="download-results" class="download-results"></div>
+                <button id="close-and-refresh-btn" class="youtube-action-btn">
+                    <i class="fas fa-check"></i> Close & Refresh Playlist
+                </button>
             </div>
         </div>
     </div>
