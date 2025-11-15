@@ -393,10 +393,10 @@ async function downloadPlaylist(url, options = {}) {
 async function batchDownload(urls, options = {}) {
   const {
     customAlbumName = null,
-    downloadVideo = false
+    downloadVideo = false,
+    downloadId = generateDownloadId()
   } = options;
 
-  const downloadId = generateDownloadId();
   const totalUrls = urls.length;
 
   updateProgress(downloadId, {

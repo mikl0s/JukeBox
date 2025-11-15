@@ -50,7 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const youtubeResultsSection = document.getElementById('youtube-results-section');
     const downloadResults = document.getElementById('download-results');
     const closeAndRefreshButton = document.getElementById('close-and-refresh-btn');
+    const downloadVideoCheckbox = document.getElementById('download-video-checkbox');
     let currentYoutubeInfo = null;
+    let currentDownloadId = null;
+    let progressPollInterval = null;
 
     // --- Visualization Elements ---
     const canvas = document.getElementById('visualizer-canvas');
@@ -259,6 +262,231 @@ document.addEventListener('DOMContentLoaded', () => {
                 plugins: { legend: { labels: { color: '#e0e0e0' } } }
             }
         });
+    }
+
+    // --- YouTube Download Modal Functions ---
+    function showYoutubeModal() {
+        if (!youtubeModalOverlay) {
+            log("YouTube modal overlay not found!", false, true);
+            return;
+        }
+        // Reset modal state
+        if (youtubeUrlInput) youtubeUrlInput.value = '';
+        if (albumNameInput) albumNameInput.value = '';
+        if (downloadVideoCheckbox) downloadVideoCheckbox.checked = false;
+        if (youtubeProgressSection) youtubeProgressSection.classList.add('hidden');
+        if (youtubeResultsSection) youtubeResultsSection.classList.add('hidden');
+        currentDownloadId = null;
+
+        youtubeModalOverlay.classList.remove('hidden');
+    }
+
+    function hideYoutubeModal() {
+        if (!youtubeModalOverlay) {
+            log("YouTube modal overlay not found!", false, true);
+            return;
+        }
+        // Stop progress polling if active
+        if (progressPollInterval) {
+            clearInterval(progressPollInterval);
+            progressPollInterval = null;
+        }
+        youtubeModalOverlay.classList.add('hidden');
+    }
+
+    async function startYoutubeDownload() {
+        if (!youtubeUrlInput || !downloadStartButton) {
+            log("YouTube input elements not found!", false, true);
+            return;
+        }
+
+        // Parse URLs from textarea
+        const urlText = youtubeUrlInput.value.trim();
+        if (!urlText) {
+            alert('Please enter at least one YouTube URL');
+            return;
+        }
+
+        const urls = urlText
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line && (line.includes('youtube.com') || line.includes('youtu.be')));
+
+        if (urls.length === 0) {
+            alert('No valid YouTube URLs found');
+            return;
+        }
+
+        const albumName = albumNameInput ? albumNameInput.value.trim() : '';
+        const downloadVideo = downloadVideoCheckbox ? downloadVideoCheckbox.checked : false;
+
+        log(`[Client] Starting download of ${urls.length} URL(s), albumName: ${albumName}, downloadVideo: ${downloadVideo}`);
+
+        // Disable start button
+        downloadStartButton.disabled = true;
+        downloadStartButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+
+        try {
+            const response = await fetch('/api/youtube/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    urls,
+                    albumName: albumName || null,
+                    downloadVideo
+                })
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Download failed');
+            }
+
+            currentDownloadId = result.downloadId;
+            log(`[Client] Download started with ID: ${currentDownloadId}`);
+
+            // Show progress section, hide input
+            if (youtubeProgressSection) youtubeProgressSection.classList.remove('hidden');
+
+            // Start polling for progress
+            startProgressPolling();
+
+        } catch (error) {
+            log('[Client] Error starting download: ' + error, true);
+            alert('Error starting download: ' + error.message);
+            downloadStartButton.disabled = false;
+            downloadStartButton.innerHTML = '<i class="fas fa-download"></i> Start Download';
+        }
+    }
+
+    function startProgressPolling() {
+        if (!currentDownloadId) {
+            log('No download ID available for polling', false, true);
+            return;
+        }
+
+        // Clear any existing interval
+        if (progressPollInterval) {
+            clearInterval(progressPollInterval);
+        }
+
+        // Poll every 500ms
+        progressPollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/youtube/progress/${currentDownloadId}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    log('Progress polling failed: ' + result.error, false, true);
+                    return;
+                }
+
+                updateProgressUI(result.progress);
+
+                // Stop polling if completed or error
+                if (result.progress.completed || result.progress.error) {
+                    clearInterval(progressPollInterval);
+                    progressPollInterval = null;
+
+                    if (result.progress.completed) {
+                        showDownloadComplete(result.progress);
+                    }
+                }
+
+            } catch (error) {
+                log('[Client] Error polling progress: ' + error, true);
+            }
+        }, 500);
+    }
+
+    function updateProgressUI(progress) {
+        if (!progress) return;
+
+        // Update progress bar
+        if (progressBar) {
+            progressBar.style.width = `${progress.progress || 0}%`;
+            progressBar.textContent = `${progress.progress || 0}%`;
+        }
+
+        // Update status
+        if (progressStatus) {
+            progressStatus.textContent = progress.status || 'Processing...';
+        }
+
+        // Update details
+        if (progressDetails) {
+            let details = '';
+
+            if (progress.totalUrls) {
+                details += `URLs: ${progress.currentUrl || 0}/${progress.totalUrls}\n`;
+            }
+
+            if (progress.totalVideos) {
+                details += `Videos: ${progress.currentVideo || 0}/${progress.totalVideos}\n`;
+            }
+
+            if (progress.videoTitle) {
+                details += `Current: ${progress.videoTitle}\n`;
+            }
+
+            if (progress.albumName) {
+                details += `Album: ${progress.albumName}\n`;
+            }
+
+            progressDetails.textContent = details;
+        }
+    }
+
+    function showDownloadComplete(progress) {
+        // Hide progress, show results
+        if (youtubeProgressSection) youtubeProgressSection.classList.add('hidden');
+        if (youtubeResultsSection) youtubeResultsSection.classList.remove('hidden');
+
+        // Build results summary
+        if (downloadResults) {
+            let html = '<div class="download-summary">';
+
+            html += `<p class="result-success"><strong>✓ Download Complete!</strong></p>`;
+
+            if (progress.totalUrls) {
+                html += `<p>Processed ${progress.totalUrls} URL(s)</p>`;
+            }
+
+            if (progress.successful !== undefined) {
+                html += `<p class="result-success">✓ Successfully downloaded: ${progress.successful}</p>`;
+            }
+
+            if (progress.skipped) {
+                html += `<p class="result-warning">⊘ Skipped (already exists): ${progress.skipped}</p>`;
+            }
+
+            if (progress.failed) {
+                html += `<p class="result-error">✗ Failed: ${progress.failed}</p>`;
+            }
+
+            if (progress.playlists) {
+                html += `<p>📁 Playlists processed: ${progress.playlists}</p>`;
+            }
+
+            html += '</div>';
+            downloadResults.innerHTML = html;
+        }
+
+        // Re-enable download button for next download
+        if (downloadStartButton) {
+            downloadStartButton.disabled = false;
+            downloadStartButton.innerHTML = '<i class="fas fa-download"></i> Start Download';
+        }
+    }
+
+    function closeAndRefreshPlaylist() {
+        hideYoutubeModal();
+
+        // If we're on YouTube source, refresh the playlist
+        if (currentSource === 'youtube') {
+            fetchPlaylist('youtube');
+        }
     }
 
     // --- Core Player Functions ---
@@ -991,6 +1219,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     else log("Missing statsModalOverlay", false, true);
+
+    // YouTube modal event listeners
+    if (youtubeDownloadButton) youtubeDownloadButton.addEventListener('click', showYoutubeModal);
+    else log("Missing youtubeDownloadButton", false, true);
+    if (youtubeModalCloseButton) youtubeModalCloseButton.addEventListener('click', hideYoutubeModal);
+    else log("Missing youtubeModalCloseButton", false, true);
+    if (downloadStartButton) downloadStartButton.addEventListener('click', startYoutubeDownload);
+    else log("Missing downloadStartButton", false, true);
+    if (closeAndRefreshButton) closeAndRefreshButton.addEventListener('click', closeAndRefreshPlaylist);
+    else log("Missing closeAndRefreshButton", false, true);
+    if (youtubeModalOverlay) youtubeModalOverlay.addEventListener('click', (event) => {
+        if (event.target === youtubeModalOverlay) {
+            hideYoutubeModal();
+        }
+    });
+    else log("Missing youtubeModalOverlay", false, true);
 
     // Add window resize listener to check title scrolling when window size changes
     window.addEventListener('resize', () => {

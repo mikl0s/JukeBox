@@ -375,34 +375,57 @@ app.post('/api/youtube/detect', async (req, res) => {
     }
 });
 
-// POST /api/youtube/download - Download video or playlist
+// POST /api/youtube/download - Download videos from URLs (batch)
 app.post('/api/youtube/download', async (req, res) => {
-    const { url, albumName, isPlaylist } = req.body;
-    console.log(`[Server] API request: /api/youtube/download - ${url}`);
+    const { urls, albumName, downloadVideo = false } = req.body;
+    console.log(`[Server] API request: /api/youtube/download - ${urls?.length || 0} URL(s)`);
 
-    if (!url || typeof url !== 'string') {
-        return res.status(400).json({ success: false, error: 'Invalid URL' });
+    if (!urls || !Array.isArray(urls) || urls.length === 0) {
+        return res.status(400).json({ success: false, error: 'Invalid URLs array' });
     }
 
     try {
-        // Set up progress callback to send updates
-        const progressCallback = (progress) => {
-            // For now, just log progress. In a real implementation, you'd use WebSockets or SSE
-            console.log('[Server] Download progress:', progress.stage, progress);
-        };
+        // Generate download ID first
+        const downloadId = youtubeApi.generateDownloadId();
 
-        let result;
-        if (isPlaylist) {
-            result = await youtubeApi.downloadPlaylist(url, albumName, progressCallback);
-        } else {
-            result = await youtubeApi.downloadVideo(url, albumName, progressCallback);
-        }
+        // Start batch download in background (don't await)
+        youtubeApi.batchDownload(urls, {
+            customAlbumName: albumName,
+            downloadVideo: downloadVideo,
+            downloadId: downloadId
+        }).then(result => {
+            console.log('[Server] Batch download completed:', result);
+        }).catch(error => {
+            console.error('[Server] Background download error:', error);
+        });
 
-        res.json(result);
+        // Immediately return the download ID so client can poll for progress
+        res.json({ success: true, downloadId });
+
     } catch (error) {
-        console.error('[Server] Error downloading:', error);
+        console.error('[Server] Error starting download:', error);
         res.status(500).json({ success: false, error: error.message });
     }
+});
+
+// GET /api/youtube/progress/:downloadId - Get download progress
+app.get('/api/youtube/progress/:downloadId', (req, res) => {
+    const { downloadId } = req.params;
+    console.log(`[Server] API request: /api/youtube/progress/${downloadId}`);
+
+    const progress = youtubeApi.getProgress(downloadId);
+
+    if (!progress) {
+        return res.json({
+            success: false,
+            error: 'Download ID not found or expired'
+        });
+    }
+
+    res.json({
+        success: true,
+        progress
+    });
 });
 
 // --- Serve Static Files & Routes ---

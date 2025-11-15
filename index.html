@@ -124,23 +124,22 @@
             <h1><i class="fab fa-youtube"></i> Download from YouTube</h1>
 
             <div class="youtube-input-section">
-                <label for="youtube-url-input">YouTube URL</label>
-                <input type="text" id="youtube-url-input" placeholder="https://www.youtube.com/watch?v=... or playlist URL" />
-                <button id="detect-btn" class="youtube-action-btn">
-                    <i class="fas fa-search"></i> Detect
-                </button>
-            </div>
-
-            <div id="youtube-info-section" class="youtube-info-section hidden">
-                <div id="youtube-info-content"></div>
+                <label for="youtube-url-input">YouTube URLs (one per line)</label>
+                <textarea id="youtube-url-input" placeholder="https://www.youtube.com/watch?v=...&#10;https://www.youtube.com/watch?v=...&#10;Paste multiple URLs, one per line" rows="5"></textarea>
 
                 <div class="youtube-options">
-                    <label for="album-name-input">Album Name (optional for playlists, required for single videos to group)</label>
-                    <input type="text" id="album-name-input" placeholder="Leave empty for 'Mixed' folder" />
+                    <label for="album-name-input">Album Name (optional - groups all downloads)</label>
+                    <input type="text" id="album-name-input" placeholder="Leave empty for 'Mixed' folder or auto-detected playlist names" />
+
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="download-video-checkbox" />
+                        Download video files (MP4) + extract audio (MP3)
+                        <span class="checkbox-note">Unchecked = audio-only (MP3)</span>
+                    </label>
                 </div>
 
                 <button id="download-start-btn" class="youtube-action-btn download-btn-primary">
-                    <i class="fas fa-download"></i> Download
+                    <i class="fas fa-download"></i> Start Download
                 </button>
             </div>
 
