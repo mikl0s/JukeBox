@@ -64,6 +64,7 @@ async function detectPlaylist(url) {
       dumpSingleJson: true,
       noWarnings: true,
       flatPlaylist: true,
+      cookiesFromBrowser: 'chrome',
     });
 
     if (info._type === 'playlist') {
@@ -86,7 +87,7 @@ async function detectPlaylist(url) {
 async function downloadVideo(url, options = {}) {
   const {
     albumFolder = null,
-    downloadVideo = false, // true = video+audio, false = audio-only
+    includeVideo = false, // true = video+audio, false = audio-only
     downloadId = generateDownloadId()
   } = options;
 
@@ -108,6 +109,7 @@ async function downloadVideo(url, options = {}) {
       dumpSingleJson: true,
       noWarnings: true,
       noCallHome: true,
+      cookiesFromBrowser: 'chrome',
     });
 
     const title = info.title || 'Unknown Title';
@@ -121,12 +123,12 @@ async function downloadVideo(url, options = {}) {
     // Create safe filename
     const safeTitle = sanitizeFilename(title);
     const audioPath = path.join(outputFolder, `${safeTitle}.mp3`);
-    const videoPath = downloadVideo ? path.join(outputFolder, `${safeTitle}.mp4`) : null;
+    const videoPath = includeVideo ? path.join(outputFolder, `${safeTitle}.mp4`) : null;
 
     // Check if files already exist
     try {
       await fs.access(audioPath);
-      if (!downloadVideo || (downloadVideo && videoPath)) {
+      if (!includeVideo || (includeVideo && videoPath)) {
         try {
           if (videoPath) await fs.access(videoPath);
           updateProgress(downloadId, {
@@ -154,7 +156,7 @@ async function downloadVideo(url, options = {}) {
     }
 
     // Download video if requested
-    if (downloadVideo && videoPath) {
+    if (includeVideo && videoPath) {
       updateProgress(downloadId, {
         stage: 'downloading_video',
         title,
@@ -167,6 +169,7 @@ async function downloadVideo(url, options = {}) {
         output: videoPath,
         noWarnings: true,
         noCallHome: true,
+        cookiesFromBrowser: 'chrome',
       });
 
       updateProgress(downloadId, {
@@ -180,8 +183,8 @@ async function downloadVideo(url, options = {}) {
     updateProgress(downloadId, {
       stage: 'downloading_audio',
       title,
-      progress: downloadVideo ? 70 : 30,
-      status: downloadVideo ? 'Extracting audio...' : `Downloading audio: ${title}...`
+      progress: includeVideo ? 70 : 30,
+      status: includeVideo ? 'Extracting audio...' : `Downloading audio: ${title}...`
     });
 
     await ytDlp(url, {
@@ -193,6 +196,7 @@ async function downloadVideo(url, options = {}) {
       noCallHome: true,
       embedThumbnail: false,
       addMetadata: false,
+      cookiesFromBrowser: 'chrome',
     });
 
     // Add metadata
@@ -263,13 +267,13 @@ async function downloadVideo(url, options = {}) {
       skipped: false,
       title,
       audioPath,
-      videoPath: downloadVideo ? videoPath : null,
+      videoPath: includeVideo ? videoPath : null,
       filename: `${safeTitle}.mp3`,
       folder: albumFolder || 'Mixed',
       duration,
       artist,
       downloadId,
-      hasVideo: downloadVideo
+      hasVideo: includeVideo
     };
 
   } catch (error) {
@@ -288,7 +292,7 @@ async function downloadVideo(url, options = {}) {
 async function downloadPlaylist(url, options = {}) {
   const {
     customAlbumName = null,
-    downloadVideo = false,
+    includeVideo = false,
     downloadId = generateDownloadId()
   } = options;
 
@@ -304,7 +308,7 @@ async function downloadPlaylist(url, options = {}) {
 
     if (!playlistInfo.isPlaylist) {
       // Not a playlist, download as single video
-      return await downloadVideo(url, { downloadVideo, downloadId });
+      return await downloadVideo(url, { includeVideo, downloadId });
     }
 
     const albumName = customAlbumName || sanitizeFilename(playlistInfo.title);
@@ -337,7 +341,7 @@ async function downloadPlaylist(url, options = {}) {
 
       const result = await downloadVideo(videoUrl, {
         albumFolder: albumName,
-        downloadVideo,
+        includeVideo,
         downloadId: `${downloadId}_${i}`
       });
 
@@ -393,7 +397,7 @@ async function downloadPlaylist(url, options = {}) {
 async function batchDownload(urls, options = {}) {
   const {
     customAlbumName = null,
-    downloadVideo = false,
+    includeVideo = false,
     downloadId = generateDownloadId()
   } = options;
 
@@ -428,13 +432,13 @@ async function batchDownload(urls, options = {}) {
     if (playlistInfo.isPlaylist) {
       result = await downloadPlaylist(url, {
         customAlbumName,
-        downloadVideo,
+        includeVideo,
         downloadId: `${downloadId}_pl_${i}`
       });
     } else {
       result = await downloadVideo(url, {
         albumFolder: customAlbumName,
-        downloadVideo,
+        includeVideo,
         downloadId: `${downloadId}_v_${i}`
       });
     }
