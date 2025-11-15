@@ -524,9 +524,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (titleWidth > containerWidth) {
             // Calculate exact distance to scroll (including padding)
             const scrollDistance = -(titleWidth + 50); // 50px for padding-right
-            // Calculate duration based on distance for consistent speed (60px per second)
+            // Calculate duration based on distance for consistent speed (30px per second)
             // Add 3 seconds for the pause at end + reset
-            const scrollTime = Math.abs(scrollDistance) / 60;
+            const scrollTime = Math.abs(scrollDistance) / 30;
             const totalDuration = scrollTime + 3;
             currentTrackTitleElement.style.setProperty('--scroll-distance', `${scrollDistance}px`);
             currentTrackTitleElement.style.setProperty('--scroll-duration', `${totalDuration}s`);
@@ -908,9 +908,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (title.scrollWidth > titleContainer.clientWidth) {
                     // Calculate exact distance to scroll (including padding)
                     const scrollDistance = -(title.scrollWidth + 20); // 20px for padding-right
-                    // Calculate duration based on distance for consistent speed (80px per second for smaller text)
+                    // Calculate duration based on distance for consistent speed (40px per second for smaller text)
                     // Add 3 seconds for the pause at end + reset
-                    const scrollTime = Math.abs(scrollDistance) / 80;
+                    const scrollTime = Math.abs(scrollDistance) / 40;
                     const totalDuration = scrollTime + 3;
                     title.style.setProperty('--scroll-distance', `${scrollDistance}px`);
                     title.style.setProperty('--scroll-duration', `${totalDuration}s`);
