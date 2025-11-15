@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const visualizationStyleSelector = document.getElementById('viz-style-selector');
     const sourceMusicButton = document.getElementById('source-music-btn');
     const sourceYoutubeButton = document.getElementById('source-youtube-btn');
+    const viewGridButton = document.getElementById('view-grid-btn');
+    const viewListButton = document.getElementById('view-list-btn');
 
     // --- Stats Modal Elements ---
     const statsIconButton = document.getElementById('stats-icon-btn');
@@ -76,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let prefixToRemove = null; // Will be fetched from server
     let debugLogging = false; // Default to false until config is loaded
     let currentSource = 'music'; // 'music' or 'youtube'
+    let currentView = 'grid'; // 'grid' or 'list'
 
     // --- Constants ---
     const DEFAULT_SONG_SHORT_TITLE = "Blues";
@@ -567,7 +570,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchPlaylist(source = 'music') {
         log(`[Client] Fetching playlist from ${source}...`);
         try {
-            const response = await fetch(`/api/music?source=${source}`);
+            // Request metadata if in list view
+            const metadataParam = currentView === 'list' ? '&metadata=true' : '';
+            const response = await fetch(`/api/music?source=${source}${metadataParam}`);
             if (!response.ok) {
                 let errorMessage = `HTTP error! ${response.status}`;
                 try {
@@ -903,7 +908,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function populatePlaylist() {
         if (!playlistElement) return;
+
+        // Update playlist container class based on current view
+        playlistElement.className = currentView === 'list' ? 'playlist-list' : 'playlist-grid';
         playlistElement.innerHTML = '';
+
         if (songs.length === 0) {
             playlistElement.innerHTML = '<div class="playlist-item-loading">No songs found.</div>';
             return;
@@ -922,7 +931,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create title container for scrolling
             const titleContainer = document.createElement('div');
             titleContainer.className = 'playlist-item-title-container';
-            
+
             const title = document.createElement('span');
             title.className = 'playlist-item-title';
             const displayTitle = prefixToRemove ? song.title.replace(prefixToRemove, '') : song.title;
@@ -944,6 +953,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     title.classList.add('scrolling-title');
                 }
             }, 100); // Small delay to ensure DOM is fully rendered
+
+            // Add list view specific columns
+            if (currentView === 'list' && song.metadata) {
+                // Artist column
+                const artist = document.createElement('span');
+                artist.className = 'playlist-item-artist';
+                artist.textContent = song.metadata.artist || 'Unknown';
+                artist.title = song.metadata.artist || 'Unknown'; // Tooltip for long names
+                playlistItem.appendChild(artist);
+
+                // Duration column
+                const duration = document.createElement('span');
+                duration.className = 'playlist-item-duration';
+                const minutes = Math.floor(song.metadata.duration / 60);
+                const seconds = Math.floor(song.metadata.duration % 60);
+                duration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                playlistItem.appendChild(duration);
+
+                // Bitrate column
+                const bitrate = document.createElement('span');
+                bitrate.className = 'playlist-item-bitrate';
+                bitrate.textContent = song.metadata.bitrate ? `${song.metadata.bitrate} kbps` : 'N/A';
+                playlistItem.appendChild(bitrate);
+
+                // Plays column
+                const plays = document.createElement('span');
+                plays.className = 'playlist-item-plays';
+                plays.textContent = `${song.play_count || 0}`;
+                plays.title = `${song.play_count || 0} plays`;
+                playlistItem.appendChild(plays);
+            }
 
             const count = document.createElement('span');
             count.className = 'playlist-item-count';
@@ -984,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load existing data to preserve indices for other sources
             const existing = JSON.parse(localStorage.getItem('jukeboxSettings') || '{}');
 
-            // Save current song index, volume, visualization style, play mode, and source
+            // Save current song index, volume, visualization style, play mode, source, and view
             const dataToSave = {
                 currentSongIndex: currentSongIndex,
                 musicSongIndex: currentSource === 'music' ? currentSongIndex : (existing.musicSongIndex || 0),
@@ -993,6 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 visualizationStyle: visualizationStyleSelector ? visualizationStyleSelector.value : 'bars',
                 playMode: playMode, // Save play mode (repeat-all, repeat-one, shuffle)
                 currentSource: currentSource, // Save current source (music or youtube)
+                currentView: currentView, // Save current view (grid or list)
                 lastUpdated: new Date().toISOString()
             };
             localStorage.setItem('jukeboxSettings', JSON.stringify(dataToSave));
@@ -1035,6 +1076,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parsedData.currentSource) {
                     currentSource = parsedData.currentSource;
                     log(`[Client] Restored source: ${currentSource}`);
+                }
+
+                // Restore view if available
+                if (parsedData.currentView) {
+                    currentView = parsedData.currentView;
+                    updateViewButtons();
+                    log(`[Client] Restored view: ${currentView}`);
                 }
 
                 // Return the saved song index for the CURRENT source
@@ -1253,6 +1301,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sourceYoutubeButton) sourceYoutubeButton.addEventListener('click', () => switchSource('youtube'));
     else log("Missing sourceYoutubeButton", false, true);
 
+    // View toggle buttons
+    if (viewGridButton) viewGridButton.addEventListener('click', () => switchView('grid'));
+    else log("Missing viewGridButton", false, true);
+    if (viewListButton) viewListButton.addEventListener('click', () => switchView('list'));
+    else log("Missing viewListButton", false, true);
+
     if (visualizationStyleSelector) {
         visualizationStyleSelector.addEventListener('change', () => {
             currentVisualizationStyle = visualizationStyleSelector.value;
@@ -1350,6 +1404,34 @@ document.addEventListener('DOMContentLoaded', () => {
         saveToLocalStorage();
     }
 
+    async function switchView(newView) {
+        if (newView === currentView) return; // Already in this view
+
+        log(`[Client] Switching view from ${currentView} to ${newView}`);
+        currentView = newView;
+        updateViewButtons();
+
+        // Refetch playlist with metadata if switching to list view
+        await fetchPlaylist(currentSource);
+
+        // Repopulate playlist with new view
+        populatePlaylist();
+
+        saveToLocalStorage();
+    }
+
+    function updateViewButtons() {
+        if (viewGridButton && viewListButton) {
+            if (currentView === 'grid') {
+                viewGridButton.classList.add('active');
+                viewListButton.classList.remove('active');
+            } else {
+                viewGridButton.classList.remove('active');
+                viewListButton.classList.add('active');
+            }
+        }
+    }
+
     // --- Initialization ---
     async function initPlayer() {
         log("[Client] Initializing player...");
@@ -1366,9 +1448,10 @@ document.addEventListener('DOMContentLoaded', () => {
         else log("Missing playModeIcon", false, true);
         clearCanvas();
 
-        // Load settings from localStorage (including source)
+        // Load settings from localStorage (including source and view)
         loadFromLocalStorage();
         updateSourceButtons(); // Update UI based on restored source
+        updateViewButtons(); // Update UI based on restored view
 
         await fetchConfig(); // Fetch prefixToRemove before proceeding
         trackVisit();

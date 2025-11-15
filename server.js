@@ -144,7 +144,7 @@ async function scanDirectoryRecursive(directory, baseDir = directory) {
 }
 
 // Helper function to get music from a specific directory
-async function getMusicFromDirectory(directory, source = 'music') {
+async function getMusicFromDirectory(directory, source = 'music', includeMetadata = false) {
     // 1. Read directory (recursively for YouTube to scan Mixed/, Album folders, etc.)
     let currentMusicFiles = [];
 
@@ -186,12 +186,46 @@ async function getMusicFromDirectory(directory, source = 'music') {
          }
     });
 
-    // 3. Create combined list with source information
-    const combinedList = currentMusicFiles.map(filename => ({
-        filename: filename,
-        play_count: dataMap[filename]?.play_count || 0,
-        download_count: dataMap[filename]?.download_count || 0,
-        source: source
+    // 3. Create combined list with source information and optional metadata
+    const combinedList = await Promise.all(currentMusicFiles.map(async (filename) => {
+        const item = {
+            filename: filename,
+            play_count: dataMap[filename]?.play_count || 0,
+            download_count: dataMap[filename]?.download_count || 0,
+            source: source
+        };
+
+        // Read MP3 metadata if requested
+        if (includeMetadata) {
+            try {
+                const filePath = path.join(directory, `${filename}.mp3`);
+                const metadata = await mm.parseFile(filePath, { skipCovers: true, duration: true });
+
+                item.metadata = {
+                    artist: metadata.common?.artist || metadata.common?.albumartist || 'Unknown Artist',
+                    album: metadata.common?.album || 'Unknown Album',
+                    title: metadata.common?.title || filename,
+                    duration: metadata.format?.duration || 0,
+                    bitrate: metadata.format?.bitrate ? Math.round(metadata.format?.bitrate / 1000) : 0, // Convert to kbps
+                    sampleRate: metadata.format?.sampleRate || 0,
+                    codec: metadata.format?.codec || 'Unknown'
+                };
+            } catch (metadataErr) {
+                console.warn(`[Server] Error reading metadata for ${filename}:`, metadataErr.message);
+                // Provide default metadata on error
+                item.metadata = {
+                    artist: 'Unknown',
+                    album: 'Unknown',
+                    title: filename,
+                    duration: 0,
+                    bitrate: 0,
+                    sampleRate: 0,
+                    codec: 'Unknown'
+                };
+            }
+        }
+
+        return item;
     }));
 
     // 4. Sort combined list primarily by play_count (desc), secondarily by filename (asc)
@@ -204,10 +238,11 @@ async function getMusicFromDirectory(directory, source = 'music') {
 }
 
 // GET /api/music - Returns sorted list of { filename, play_count, download_count, source }
-// Query parameter: ?source=music or ?source=youtube (defaults to music)
+// Query parameters: ?source=music|youtube (defaults to music), ?metadata=true (include MP3 metadata)
 app.get('/api/music', async (req, res) => {
     const source = req.query.source || 'music';
-    console.log(`[Server] API request: /api/music?source=${source}`);
+    const includeMetadata = req.query.metadata === 'true';
+    console.log(`[Server] API request: /api/music?source=${source}&metadata=${includeMetadata}`);
 
     if (!playsCollection) {
         console.warn('[Server] /api/music requested before DB ready.');
@@ -218,9 +253,9 @@ app.get('/api/music', async (req, res) => {
         let combinedList = [];
 
         if (source === 'youtube') {
-            combinedList = await getMusicFromDirectory(youtubeDir, 'youtube');
+            combinedList = await getMusicFromDirectory(youtubeDir, 'youtube', includeMetadata);
         } else {
-            combinedList = await getMusicFromDirectory(musicDir, 'music');
+            combinedList = await getMusicFromDirectory(musicDir, 'music', includeMetadata);
         }
 
         console.log(`[Server] Found ${combinedList.length} MP3 files from ${source}, sorted by plays.`);

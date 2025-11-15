@@ -76,16 +76,26 @@
         <div class="playlist-container">
             <div class="playlist-header">
                 <h3>Playlist</h3>
-                <div class="source-toggle">
-                    <button id="source-music-btn" class="source-btn active" data-source="music">
-                        <i class="fas fa-music"></i> Music
-                    </button>
-                    <button id="source-youtube-btn" class="source-btn" data-source="youtube">
-                        <i class="fab fa-youtube"></i> YouTube
-                    </button>
-                    <button id="youtube-download-btn" class="source-btn download-btn" title="Download from YouTube">
-                        <i class="fas fa-download"></i>
-                    </button>
+                <div class="header-controls-group">
+                    <div class="source-toggle">
+                        <button id="source-music-btn" class="source-btn active" data-source="music">
+                            <i class="fas fa-music"></i> Music
+                        </button>
+                        <button id="source-youtube-btn" class="source-btn" data-source="youtube">
+                            <i class="fab fa-youtube"></i> YouTube
+                        </button>
+                        <button id="youtube-download-btn" class="source-btn download-btn" title="Download from YouTube">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="view-toggle">
+                        <button id="view-grid-btn" class="view-btn active" data-view="grid" title="Grid View">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button id="view-list-btn" class="view-btn" data-view="list" title="List View">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div id="playlist" class="playlist-grid">
