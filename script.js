@@ -1117,26 +1117,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function drawWaveform(data, length) {
         if (!canvas || !canvasContext || !data || !length) return;
-        const barWidth = Math.max(1, canvas.width / length);
+        const sliceWidth = canvas.width / length;
         const centerY = canvas.height / 2;
-        let x = 0;
+
+        // Create gradient for the waveform line
         const gradient = canvasContext.createLinearGradient(0, 0, canvas.width, 0);
         gradient.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim());
         gradient.addColorStop(0.5, getComputedStyle(document.documentElement).getPropertyValue('--highlight-color').trim());
         gradient.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim());
-        canvasContext.fillStyle = gradient;
-        const maxBarHeight = canvas.height / 2;
+
+        // Draw the waveform as a continuous line
+        canvasContext.lineWidth = 2;
+        canvasContext.strokeStyle = gradient;
+        canvasContext.beginPath();
+
+        let x = 0;
         for (let i = 0; i < length; i++) {
-            const amplitude = (data[i] - 128);
-            let derivedHeight = Math.abs(amplitude) * (canvas.height / 256) * 10.0;
-            const barHeight = Math.min(derivedHeight, maxBarHeight);
-            if (amplitude > 0) {
-                canvasContext.fillRect(x, centerY - barHeight, barWidth, barHeight);
+            // Map byte value (0-255) to canvas height with 128 being center
+            const v = data[i] / 128.0; // Normalize to 0-2 range
+            const y = (v * centerY); // Map to canvas height
+
+            if (i === 0) {
+                canvasContext.moveTo(x, y);
             } else {
-                canvasContext.fillRect(x, centerY, barWidth, barHeight);
+                canvasContext.lineTo(x, y);
             }
-            x += barWidth;
+
+            x += sliceWidth;
         }
+
+        canvasContext.stroke();
     }
 
     // --- Event Listeners ---
