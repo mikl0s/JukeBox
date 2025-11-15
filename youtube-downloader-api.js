@@ -47,11 +47,15 @@ function generateDownloadId() {
 
 // Update progress for a download
 function updateProgress(downloadId, progress) {
-  activeDownloads.set(downloadId, {
+  const updatedProgress = {
     ...activeDownloads.get(downloadId),
     ...progress,
     lastUpdate: Date.now()
-  });
+  };
+  activeDownloads.set(downloadId, updatedProgress);
+
+  // Log progress to console for visibility
+  console.log(`[YouTube] ${downloadId}: ${progress.status || progress.stage} (${progress.progress || 0}%)`);
 }
 
 // Get progress for a download

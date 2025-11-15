@@ -433,7 +433,7 @@ app.post('/api/youtube/download', async (req, res) => {
         // Start batch download in background (don't await)
         youtubeApi.batchDownload(urls, {
             customAlbumName: albumName,
-            downloadVideo: downloadVideo,
+            includeVideo: downloadVideo,
             downloadId: downloadId
         }).then(result => {
             console.log('[Server] Batch download completed:', result);
