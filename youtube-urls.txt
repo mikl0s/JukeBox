@@ -1,0 +1,10 @@
+# JukeBox YouTube Audio URLs
+# Add one YouTube URL per line
+# Lines starting with # are ignored
+#
+# Example format:
+# https://www.youtube.com/watch?v=VIDEO_ID
+# https://youtu.be/VIDEO_ID
+#
+# Add your YouTube URLs below:
+

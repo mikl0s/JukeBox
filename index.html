@@ -74,7 +74,17 @@
 
         <!-- Playlist Section -->
         <div class="playlist-container">
-            <h3>Playlist</h3>
+            <div class="playlist-header">
+                <h3>Playlist</h3>
+                <div class="source-toggle">
+                    <button id="source-music-btn" class="source-btn active" data-source="music">
+                        <i class="fas fa-music"></i> Music
+                    </button>
+                    <button id="source-youtube-btn" class="source-btn" data-source="youtube">
+                        <i class="fab fa-youtube"></i> YouTube
+                    </button>
+                </div>
+            </div>
             <div id="playlist" class="playlist-grid">
                 <div class="playlist-item-loading">Loading...</div>
             </div>

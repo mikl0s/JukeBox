@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextButton = document.getElementById('next-btn');
     const downloadLink = document.getElementById('download-link');
     const visualizationStyleSelector = document.getElementById('viz-style-selector');
+    const sourceMusicButton = document.getElementById('source-music-btn');
+    const sourceYoutubeButton = document.getElementById('source-youtube-btn');
 
     // --- Stats Modal Elements ---
     const statsIconButton = document.getElementById('stats-icon-btn');
@@ -46,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isTrackedForPlay = false;
     let prefixToRemove = null; // Will be fetched from server
     let debugLogging = false; // Default to false until config is loaded
+    let currentSource = 'music'; // 'music' or 'youtube'
 
     // --- Constants ---
     const DEFAULT_SONG_SHORT_TITLE = "Blues";
@@ -278,10 +281,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function fetchPlaylist() {
-        log("[Client] Fetching playlist...");
+    async function fetchPlaylist(source = 'music') {
+        log(`[Client] Fetching playlist from ${source}...`);
         try {
-            const response = await fetch('/api/music');
+            const response = await fetch(`/api/music?source=${source}`);
             if (!response.ok) {
                 let errorMessage = `HTTP error! ${response.status}`;
                 try {
@@ -292,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const fetchedSongs = await response.json();
             if (!Array.isArray(fetchedSongs)) throw new Error("Invalid format.");
-            log(`[Client] Received ${fetchedSongs.length} sorted songs data.`);
+            log(`[Client] Received ${fetchedSongs.length} sorted songs data from ${source}.`);
 
             songs = fetchedSongs.map(data => {
                 const filename = data?.filename;
@@ -392,7 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         log(`[Client] loadSong: Checks passed index ${currentSongIndex}, filename: ${songFileName}`);
-        const songUrl = `/music/${songFileName}.mp3`;
+        const folderPath = currentSource === 'youtube' ? '/youtube' : '/music';
+        const songUrl = `${folderPath}/${songFileName}.mp3`;
         if (audioPlayer) audioPlayer.src = songUrl;
         if (currentTrackTitleElement) currentTrackTitleElement.textContent = song.title;
         if (downloadLink) downloadLink.href = songUrl;
@@ -686,12 +690,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Local Storage Functions ---
     function saveToLocalStorage() {
         try {
-            // Save current song index, volume, visualization style, and play mode
+            // Save current song index, volume, visualization style, play mode, and source
             const dataToSave = {
                 currentSongIndex: currentSongIndex,
                 volume: audioPlayer ? audioPlayer.volume : 1,
                 visualizationStyle: visualizationStyleSelector ? visualizationStyleSelector.value : 'bars',
                 playMode: playMode, // Save play mode (repeat-all, repeat-one, shuffle)
+                currentSource: currentSource, // Save current source (music or youtube)
                 lastUpdated: new Date().toISOString()
             };
             localStorage.setItem('jukeboxSettings', JSON.stringify(dataToSave));
@@ -729,7 +734,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatePlayModeIcon();
                     log(`[Client] Restored play mode: ${playMode}`);
                 }
-                
+
+                // Restore source if available
+                if (parsedData.currentSource) {
+                    currentSource = parsedData.currentSource;
+                    log(`[Client] Restored source: ${currentSource}`);
+                }
+
                 // Return the saved song index to be used when loading the playlist
                 return parsedData.currentSongIndex;
             }
@@ -925,6 +936,13 @@ document.addEventListener('DOMContentLoaded', () => {
     else log("Missing volumeIcon", false, true);
     if (playModeButton) playModeButton.addEventListener('click', changePlayMode);
     else log("Missing playModeButton", false, true);
+
+    // Source toggle buttons
+    if (sourceMusicButton) sourceMusicButton.addEventListener('click', () => switchSource('music'));
+    else log("Missing sourceMusicButton", false, true);
+    if (sourceYoutubeButton) sourceYoutubeButton.addEventListener('click', () => switchSource('youtube'));
+    else log("Missing sourceYoutubeButton", false, true);
+
     if (visualizationStyleSelector) {
         visualizationStyleSelector.addEventListener('change', () => {
             currentVisualizationStyle = visualizationStyleSelector.value;
@@ -968,6 +986,44 @@ document.addEventListener('DOMContentLoaded', () => {
         saveToLocalStorage(); // Save volume setting
     }
 
+    // --- Source Switching ---
+    function updateSourceButtons() {
+        if (sourceMusicButton && sourceYoutubeButton) {
+            if (currentSource === 'music') {
+                sourceMusicButton.classList.add('active');
+                sourceYoutubeButton.classList.remove('active');
+            } else {
+                sourceMusicButton.classList.remove('active');
+                sourceYoutubeButton.classList.add('active');
+            }
+        }
+    }
+
+    async function switchSource(newSource) {
+        if (newSource === currentSource) return; // Already on this source
+
+        log(`[Client] Switching source from ${currentSource} to ${newSource}`);
+        currentSource = newSource;
+        updateSourceButtons();
+
+        // Stop current playback
+        pauseSong();
+
+        // Fetch new playlist
+        await fetchPlaylist(currentSource);
+
+        // Load first song from new playlist
+        if (songs.length > 0) {
+            currentSongIndex = 0;
+            loadSong(currentSongIndex);
+        } else {
+            displayPlaylistMessage(`No ${newSource} files found.`);
+            disableControls();
+        }
+
+        saveToLocalStorage();
+    }
+
     // --- Initialization ---
     async function initPlayer() {
         log("[Client] Initializing player...");
@@ -983,9 +1039,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playModeIcon) playModeIcon.classList.add('fa-repeat');
         else log("Missing playModeIcon", false, true);
         clearCanvas();
+
+        // Load settings from localStorage (including source)
+        loadFromLocalStorage();
+        updateSourceButtons(); // Update UI based on restored source
+
         await fetchConfig(); // Fetch prefixToRemove before proceeding
         trackVisit();
-        await fetchPlaylist();
+        await fetchPlaylist(currentSource); // Use the current source (restored or default)
         if (songs.length > 0) {
             loadSong(currentSongIndex);
             // Force check for title scrolling after a short delay to ensure rendering

@@ -18,6 +18,9 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Use the name defined in .env.local if changed from default
 jukebox.db.json
 
+# YouTube downloads folder (user content)
+youtube/
+
 # Optional eslint cache
 .eslintcache
 

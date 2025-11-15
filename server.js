@@ -13,6 +13,8 @@ const projectRoot = __dirname;
 // Use environment variable for music folder name
 const musicFolderName = process.env.MUSIC_FOLDER || 'music';
 const musicDir = path.join(projectRoot, musicFolderName);
+const youtubeFolderName = process.env.YOUTUBE_FOLDER || 'youtube';
+const youtubeDir = path.join(projectRoot, youtubeFolderName);
 const allowedExtension = '.mp3';
 // Use environment variable for DB filename
 const dbFilename = process.env.DB_FILENAME || 'jukebox.db.json';
@@ -104,66 +106,81 @@ app.get('/api/config', (req, res) => {
     });
 });
 
-// GET /api/music - Returns sorted list of { filename, play_count, download_count }
+// Helper function to get music from a specific directory
+async function getMusicFromDirectory(directory, source = 'music') {
+    // 1. Read directory
+    let files = [];
+    try {
+         files = await fs.readdir(directory);
+    } catch (dirErr) {
+         console.error(`[Server] Error reading ${source} directory "${directory}":`, dirErr);
+         return [];
+    }
+
+    // Filter valid music files (basenames without extension) - async filtering
+    const readDirPromises = files.map(async (file) => {
+        const filePath = path.join(directory, file);
+        try {
+            const stats = await fs.stat(filePath);
+            if (stats.isFile() && path.extname(file).toLowerCase() === allowedExtension) {
+                return path.basename(file, allowedExtension);
+            }
+        } catch (statErr) { console.warn(`[Server] Error stating file ${filePath}:`, statErr.message); }
+        return null;
+    });
+    const currentMusicFiles = (await Promise.all(readDirPromises)).filter(Boolean);
+
+    // 2. Get play counts from LokiJS collection
+    const playCountDocs = playsCollection.find();
+    const dataMap = {};
+    playCountDocs.forEach(doc => {
+         if (doc.filename) {
+            dataMap[doc.filename] = {
+                play_count: doc.play_count || 0,
+                download_count: doc.download_count || 0
+            };
+         }
+    });
+
+    // 3. Create combined list with source information
+    const combinedList = currentMusicFiles.map(filename => ({
+        filename: filename,
+        play_count: dataMap[filename]?.play_count || 0,
+        download_count: dataMap[filename]?.download_count || 0,
+        source: source
+    }));
+
+    // 4. Sort combined list primarily by play_count (desc), secondarily by filename (asc)
+    combinedList.sort((a, b) => {
+        if (b.play_count !== a.play_count) return b.play_count - a.play_count;
+        return a.filename.localeCompare(b.filename);
+    });
+
+    return combinedList;
+}
+
+// GET /api/music - Returns sorted list of { filename, play_count, download_count, source }
+// Query parameter: ?source=music or ?source=youtube (defaults to music)
 app.get('/api/music', async (req, res) => {
-    console.log(`[Server] API request: /api/music`);
+    const source = req.query.source || 'music';
+    console.log(`[Server] API request: /api/music?source=${source}`);
+
     if (!playsCollection) {
         console.warn('[Server] /api/music requested before DB ready.');
         return res.status(503).json({ error: 'Database initializing, please try again shortly.' });
     }
 
     try {
-        // 1. Read directory
-        let files = [];
-        try {
-             files = await fs.readdir(musicDir);
-        } catch (dirErr) {
-             console.error(`[Server] Error reading music directory "${musicDir}":`, dirErr);
-             // Send empty list if directory is missing/unreadable
-             return res.json([]);
+        let combinedList = [];
+
+        if (source === 'youtube') {
+            combinedList = await getMusicFromDirectory(youtubeDir, 'youtube');
+        } else {
+            combinedList = await getMusicFromDirectory(musicDir, 'music');
         }
 
-        // Filter valid music files (basenames without extension) - async filtering
-        const readDirPromises = files.map(async (file) => {
-            const filePath = path.join(musicDir, file);
-            try {
-                const stats = await fs.stat(filePath);
-                if (stats.isFile() && path.extname(file).toLowerCase() === allowedExtension) {
-                    return path.basename(file, allowedExtension);
-                }
-            } catch (statErr) { console.warn(`[Server] Error stating file ${filePath}:`, statErr.message); }
-            return null;
-        });
-        const currentMusicFiles = (await Promise.all(readDirPromises)).filter(Boolean);
-
-        // 2. Get play counts from LokiJS collection
-        const playCountDocs = playsCollection.find();
-        const dataMap = {};
-        playCountDocs.forEach(doc => {
-             if (doc.filename) { // Ensure doc has a filename property
-                dataMap[doc.filename] = {
-                    play_count: doc.play_count || 0,
-                    download_count: doc.download_count || 0
-                };
-             }
-        });
-        console.log('[Server] Play counts retrieved from LokiJS:', Object.keys(dataMap).length);
-
-        // 3. Create combined list, ensuring all files from dir are included
-        const combinedList = currentMusicFiles.map(filename => ({
-            filename: filename, // filename is guaranteed string here from filtering
-            play_count: dataMap[filename]?.play_count || 0, // Safely access with optional chaining
-            download_count: dataMap[filename]?.download_count || 0
-        }));
-
-        // 4. Sort combined list primarily by play_count (desc), secondarily by filename (asc)
-        combinedList.sort((a, b) => {
-            if (b.play_count !== a.play_count) return b.play_count - a.play_count;
-            return a.filename.localeCompare(b.filename);
-        });
-
-        console.log(`[Server] Found ${combinedList.length} MP3 files, sorted by plays.`);
-        res.json(combinedList); // Send array of objects
+        console.log(`[Server] Found ${combinedList.length} MP3 files from ${source}, sorted by plays.`);
+        res.json(combinedList);
 
     } catch (error) {
         console.error("[Server] Error processing /api/music request:", error);
@@ -331,10 +348,12 @@ app.listen(port, () => {
     console.log(`[Server] Node.js server listening at http://localhost:${port}`);
     console.log(`[Server] Serving static files from: ${projectRoot}`);
     console.log(`[Server] Expecting music files in: ${musicDir}`);
+    console.log(`[Server] Expecting YouTube audio in: ${youtubeDir}`);
     console.log(`[Server] Using LokiJS database at: ${dbPath}`);
     console.log(`[Server] Stats graph showing last ${STATS_DAYS} days.`);
     // Check if music dir exists
     fs.access(musicDir).catch(() => console.warn(`[Server] WARNING: Music directory ${musicDir} does not exist.`));
+    fs.access(youtubeDir).catch(() => console.warn(`[Server] WARNING: YouTube directory ${youtubeDir} does not exist. Run 'npm run download-youtube' to create it.`));
 });
 
 // Graceful Shutdown for LokiJS
