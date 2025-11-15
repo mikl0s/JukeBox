@@ -1383,18 +1383,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (newSource === currentSource) return; // Already on this source
 
         log(`[Client] Switching source from ${currentSource} to ${newSource}`);
+
+        // Stop current playback and clear audio source
+        pauseSong();
+        if (audioPlayer) {
+            audioPlayer.src = '';
+            audioPlayer.load(); // Reset the player
+        }
+
         currentSource = newSource;
         updateSourceButtons();
-
-        // Stop current playback
-        pauseSong();
 
         // Fetch new playlist
         await fetchPlaylist(currentSource);
 
-        // Load first song from new playlist
+        // Restore the saved song index for this source
         if (songs.length > 0) {
-            currentSongIndex = 0;
+            const savedSettings = localStorage.getItem('jukeboxSettings');
+            if (savedSettings) {
+                const parsedData = JSON.parse(savedSettings);
+                const indexToRestore = currentSource === 'youtube'
+                    ? (parsedData.youtubeSongIndex || 0)
+                    : (parsedData.musicSongIndex || 0);
+                currentSongIndex = Math.min(indexToRestore, songs.length - 1); // Ensure valid index
+                log(`[Client] Restored index ${currentSongIndex} for ${currentSource} source`);
+            } else {
+                currentSongIndex = 0;
+            }
             loadSong(currentSongIndex);
         } else {
             displayPlaylistMessage(`No ${newSource} files found.`);
