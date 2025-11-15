@@ -58,9 +58,9 @@ a#download-link { line-height: 1; flex-shrink: 0; margin-right: 8px; color: inhe
 
 @keyframes marquee {
     0% { transform: translateX(0); }
-    70% { transform: translateX(var(--scroll-distance, -100%)); }
-    85% { transform: translateX(var(--scroll-distance, -100%)); } /* Hold for 2 seconds */
-    86% { transform: translateX(0); } /* Instant reset */
+    85% { transform: translateX(var(--scroll-distance, -100%)); }
+    95% { transform: translateX(var(--scroll-distance, -100%)); } /* Hold for pause */
+    96% { transform: translateX(0); } /* Instant reset */
     100% { transform: translateX(0); }
 }
 
@@ -168,9 +168,9 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 
 @keyframes scroll-playlist-title {
     0% { transform: translateX(0); }
-    70% { transform: translateX(var(--scroll-distance, -100%)); }
-    85% { transform: translateX(var(--scroll-distance, -100%)); } /* Hold for 2 seconds */
-    86% { transform: translateX(0); } /* Instant reset */
+    85% { transform: translateX(var(--scroll-distance, -100%)); }
+    95% { transform: translateX(var(--scroll-distance, -100%)); } /* Hold for pause */
+    96% { transform: translateX(0); } /* Instant reset */
     100% { transform: translateX(0); }
 }
 

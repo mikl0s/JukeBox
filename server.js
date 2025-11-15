@@ -5,6 +5,7 @@ const fs = require('fs').promises; // Use the promise-based fs module
 const path = require('path');
 const loki = require('lokijs'); // Import LokiJS
 const youtubeApi = require('./youtube-downloader-api'); // YouTube downloader API
+const mm = require('music-metadata'); // MP3 metadata reader
 
 const app = express();
 // Use environment variable for port, fallback to 4000
@@ -233,19 +234,29 @@ app.get('/api/music', async (req, res) => {
 
 // POST /api/trackplay - Increment total count and log event
 app.post('/api/trackplay', (req, res) => {
-    const { filename } = req.body;
+    const { filename, source } = req.body;
     if (!playsCollection || !eventsCollection) return res.status(503).json({ error: 'DB initializing' });
     if (!filename || typeof filename !== 'string' || filename.trim() === '') { return res.status(400).json({ error: 'Invalid filename.' }); }
 
-    console.log(`[Server] Tracking play: ${filename}`);
+    const trackSource = source || 'music'; // Default to music if not specified
+    console.log(`[Server] Tracking play (${trackSource}): ${filename}`);
     try {
         // Increment total count
         let doc = playsCollection.findOne({ filename });
-        if (doc) { doc.play_count = (doc.play_count || 0) + 1; doc.download_count = doc.download_count || 0; playsCollection.update(doc); console.log(`[Server] Incremented play count for ${filename}: ${doc.play_count}`); }
-        else { doc = playsCollection.insert({ filename, play_count: 1, download_count: 0 }); console.log(`[Server] Added ${filename} to plays (play count 1)`); }
+        if (doc) {
+            doc.play_count = (doc.play_count || 0) + 1;
+            doc.download_count = doc.download_count || 0;
+            doc.source = trackSource; // Update source
+            playsCollection.update(doc);
+            console.log(`[Server] Incremented play count for ${filename}: ${doc.play_count}`);
+        }
+        else {
+            doc = playsCollection.insert({ filename, play_count: 1, download_count: 0, source: trackSource });
+            console.log(`[Server] Added ${filename} to plays (play count 1, source: ${trackSource})`);
+        }
 
         // Log event
-        eventsCollection.insert({ type: 'play', filename: filename, timestamp: Date.now() });
+        eventsCollection.insert({ type: 'play', filename: filename, source: trackSource, timestamp: Date.now() });
 
         res.status(200).json({ message: 'Play tracked.' });
     } catch (e) { console.error(`[Server] Error tracking play for ${filename}:`, e); res.status(500).json({ error: 'Failed to track play.' }); }
@@ -253,19 +264,29 @@ app.post('/api/trackplay', (req, res) => {
 
 // POST /api/trackdownload - Increment total count and log event
 app.post('/api/trackdownload', (req, res) => {
-    const { filename } = req.body;
+    const { filename, source } = req.body;
     if (!playsCollection || !eventsCollection) return res.status(503).json({ error: 'DB initializing' });
     if (!filename || typeof filename !== 'string' || filename.trim() === '') { return res.status(400).json({ error: 'Invalid filename.' }); }
 
-    console.log(`[Server] Tracking download: ${filename}`);
+    const trackSource = source || 'music'; // Default to music if not specified
+    console.log(`[Server] Tracking download (${trackSource}): ${filename}`);
     try {
         // Increment total count
         let doc = playsCollection.findOne({ filename });
-        if (doc) { doc.download_count = (doc.download_count || 0) + 1; doc.play_count = doc.play_count || 0; playsCollection.update(doc); console.log(`[Server] Incremented download count for ${filename}: ${doc.download_count}`); }
-        else { doc = playsCollection.insert({ filename, play_count: 0, download_count: 1 }); console.log(`[Server] Added ${filename} to plays (download count 1)`); }
+        if (doc) {
+            doc.download_count = (doc.download_count || 0) + 1;
+            doc.play_count = doc.play_count || 0;
+            doc.source = trackSource; // Update source
+            playsCollection.update(doc);
+            console.log(`[Server] Incremented download count for ${filename}: ${doc.download_count}`);
+        }
+        else {
+            doc = playsCollection.insert({ filename, play_count: 0, download_count: 1, source: trackSource });
+            console.log(`[Server] Added ${filename} to plays (download count 1, source: ${trackSource})`);
+        }
 
         // Log event
-        eventsCollection.insert({ type: 'download', filename: filename, timestamp: Date.now() });
+        eventsCollection.insert({ type: 'download', filename: filename, source: trackSource, timestamp: Date.now() });
 
         res.status(200).json({ message: 'Download tracked.' });
     } catch (e) { console.error(`[Server] Error tracking download for ${filename}:`, e); res.status(500).json({ error: 'Failed to track download.' }); }
@@ -305,7 +326,8 @@ app.get('/api/stats', (req, res) => {
             .map(doc => ({
                 filename: doc.filename || '?',
                 play_count: doc.play_count || 0,
-                download_count: doc.download_count || 0
+                download_count: doc.download_count || 0,
+                source: doc.source || 'music' // Include source information
             }));
 
         // Calculate Real Daily Data for last N days (using STATS_DAYS)

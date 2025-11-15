@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalVisitsElement = document.getElementById('total-visits');
     const totalPlaysElement = document.getElementById('total-plays');
     const totalDownloadsElement = document.getElementById('total-downloads');
+    const musicPlaysElement = document.getElementById('music-plays');
+    const youtubePlaysElement = document.getElementById('youtube-plays');
+    const musicDownloadsElement = document.getElementById('music-downloads');
+    const youtubeDownloadsElement = document.getElementById('youtube-downloads');
     const chartCanvas = document.getElementById('activityChart');
     let activityChart = null; // Chart instance
     const statsDaysDisplay = document.getElementById('stats-days-display'); // For chart title
@@ -105,17 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const trackDownload = async (filename) => {
         if (!filename) return;
-        log(`[Client] Tracking download: ${filename}`);
+        log(`[Client] Tracking download for ${currentSource}: ${filename}`);
         try {
             const response = await fetch('/api/trackdownload', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename })
+                body: JSON.stringify({ filename, source: currentSource })
             });
             if (!response.ok) {
                 log(`[Client] Error tracking download (${response.status})`, true);
             } else {
-                log('[Client] Download tracked successfully.');
+                log(`[Client] Download tracked successfully (${currentSource}).`);
             }
         } catch (error) {
             log('[Client] Network error tracking download: ' + error, true);
@@ -191,25 +195,48 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderStatsInModal(stats) {
         if (!totalVisitsElement || !statsDaysDisplay) return;
         totalVisitsElement.textContent = stats.totalVisits || 0;
-        
-        // Calculate total plays and downloads
+
+        // Calculate total plays and downloads, separated by source
         let totalPlays = 0;
         let totalDownloads = 0;
-        
+        let musicPlays = 0;
+        let youtubePlays = 0;
+        let musicDownloads = 0;
+        let youtubeDownloads = 0;
+
         if (!stats.tracks || stats.tracks.length === 0) {
             // No track data
         } else {
             stats.tracks.forEach(track => {
+                const plays = track.play_count || 0;
+                const downloads = track.download_count || 0;
+                const source = track.source || 'music';
+
                 // Add to totals
-                totalPlays += track.play_count || 0;
-                totalDownloads += track.download_count || 0;
+                totalPlays += plays;
+                totalDownloads += downloads;
+
+                // Add to source-specific totals
+                if (source === 'youtube') {
+                    youtubePlays += plays;
+                    youtubeDownloads += downloads;
+                } else {
+                    musicPlays += plays;
+                    musicDownloads += downloads;
+                }
             });
         }
-        
+
         // Update total plays and downloads in the summary section
         if (totalPlaysElement) totalPlaysElement.textContent = totalPlays;
         if (totalDownloadsElement) totalDownloadsElement.textContent = totalDownloads;
-        
+
+        // Update source-specific counts
+        if (musicPlaysElement) musicPlaysElement.textContent = musicPlays;
+        if (youtubePlaysElement) youtubePlaysElement.textContent = youtubePlays;
+        if (musicDownloadsElement) musicDownloadsElement.textContent = musicDownloads;
+        if (youtubeDownloadsElement) youtubeDownloadsElement.textContent = youtubeDownloads;
+
         statsDaysDisplay.textContent = stats.dailyData?.labels?.length || '?';
         renderChartInModal(stats.dailyData);
     }
@@ -778,17 +805,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function trackPlay(filename) {
         if (!filename) return;
-        log(`[Client] Tracking play: ${filename}`);
+        log(`[Client] Tracking play for ${currentSource}: ${filename}`);
         try {
             const response = await fetch('/api/trackplay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename })
+                body: JSON.stringify({ filename, source: currentSource })
             });
             if (!response.ok) {
                 log(`[Client] Error tracking play (${response.status})`, true);
             } else {
-                log('[Client] Play tracked successfully.');
+                log(`[Client] Play tracked successfully (${currentSource}).`);
             }
         } catch (error) {
             log('[Client] Network error tracking play: ' + error, true);

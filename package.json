@@ -34,6 +34,7 @@
     "express": "latest",
     "lokijs": "latest",
     "yt-dlp-exec": "latest",
-    "node-id3": "latest"
+    "node-id3": "latest",
+    "music-metadata": "latest"
   }
 }
