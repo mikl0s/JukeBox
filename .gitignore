@@ -21,6 +21,10 @@ jukebox.db.json
 # YouTube downloads folder (user content)
 youtube/
 
+# YouTube cookies (sensitive data)
+*cookies.txt
+youtube-cookies.txt
+
 # Optional eslint cache
 .eslintcache
 
