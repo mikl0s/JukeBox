@@ -136,35 +136,70 @@ async function downloadVideo(url, options = {}) {
     const audioPath = path.join(outputFolder, `${safeTitle}.mp3`);
     const videoPath = includeVideo ? path.join(outputFolder, `${safeTitle}.mp4`) : null;
 
-    // Check if files already exist
+    // Check if files already exist (and are valid)
     try {
-      await fs.access(audioPath);
-      if (!includeVideo || (includeVideo && videoPath)) {
+      const audioStats = await fs.stat(audioPath);
+      const MIN_VALID_SIZE = 1024 * 100; // 100KB minimum (detect incomplete downloads)
+
+      if (audioStats.size >= MIN_VALID_SIZE) {
+        // Verify the MP3 file is valid by trying to read its tags
+        let isValidMP3 = false;
         try {
-          if (videoPath) await fs.access(videoPath);
-          updateProgress(downloadId, {
-            stage: 'complete',
-            progress: 100,
-            status: 'Already exists',
-            skipped: true
-          });
-          return {
-            success: true,
-            skipped: true,
-            title,
-            audioPath,
-            videoPath,
-            filename: `${safeTitle}.mp3`,
-            folder: albumFolder || 'Mixed',
-            downloadId
-          };
-        } catch {
-          // Video doesn't exist, continue
+          const tags = NodeID3.read(audioPath);
+          // If we can read tags (or it's a valid MP3 with no tags), it's likely complete
+          isValidMP3 = true;
+        } catch (readError) {
+          console.log(`[YouTube] File exists but appears corrupted: "${title}" - will redownload`);
+          await fs.unlink(audioPath);
+          isValidMP3 = false;
         }
+
+        if (isValidMP3) {
+          // Audio file exists and is valid
+          if (!includeVideo || (includeVideo && videoPath)) {
+            try {
+              if (videoPath) {
+                const videoStats = await fs.stat(videoPath);
+                if (videoStats.size < MIN_VALID_SIZE) {
+                  throw new Error('Video file too small, redownloading');
+                }
+              }
+
+              console.log(`[YouTube] SKIPPED (already exists): "${title}" (${(audioStats.size / 1024 / 1024).toFixed(2)} MB)`);
+              updateProgress(downloadId, {
+                stage: 'complete',
+                progress: 100,
+                status: `Skipped: ${title} (already exists)`,
+                skipped: true
+              });
+
+              return {
+                success: true,
+                skipped: true,
+                title,
+                audioPath,
+                videoPath,
+                filename: `${safeTitle}.mp3`,
+                folder: albumFolder || 'Mixed',
+                downloadId
+              };
+            } catch {
+              // Video doesn't exist or is invalid, continue to download
+              console.log(`[YouTube] Redownloading (video missing/invalid): "${title}"`);
+            }
+          }
+        }
+      } else {
+        // File is too small, probably incomplete - delete and redownload
+        console.log(`[YouTube] Removing incomplete file (${(audioStats.size / 1024).toFixed(2)} KB): "${title}"`);
+        await fs.unlink(audioPath);
       }
     } catch {
       // Audio doesn't exist, proceed with download
     }
+
+    // Starting new download
+    console.log(`[YouTube] DOWNLOADING: "${title}" to ${albumFolder || 'Mixed'}/`);
 
     // Download video if requested
     if (includeVideo && videoPath) {
@@ -366,10 +401,13 @@ async function downloadPlaylist(url, options = {}) {
     const skipped = results.filter(r => r.skipped).length;
     const failed = results.filter(r => !r.success).length;
 
+    const summary = `Playlist "${albumName}": ${successful} downloaded, ${skipped} skipped, ${failed} failed (${totalVideos} total)`;
+    console.log(`[YouTube] ${summary}`);
+
     updateProgress(downloadId, {
       stage: 'complete',
       progress: 100,
-      status: 'Playlist download complete!',
+      status: summary,
       completed: true,
       successful,
       skipped,
@@ -465,10 +503,13 @@ async function batchDownload(urls, options = {}) {
   const failed = results.filter(r => !r.success).length;
   const playlists = results.filter(r => r.isPlaylist).length;
 
+  const summary = `Batch complete: ${successful} downloaded, ${skipped} skipped, ${failed} failed (${totalUrls} URL(s), ${playlists} playlist(s))`;
+  console.log(`[YouTube] ${summary}`);
+
   updateProgress(downloadId, {
     stage: 'complete',
     progress: 100,
-    status: 'Batch download complete!',
+    status: summary,
     completed: true,
     totalUrls,
     successful,
