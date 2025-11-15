@@ -511,19 +511,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if title needs scrolling and apply animation if needed
     function checkTitleScrolling() {
         if (!currentTrackTitleElement) return;
-        
+
         // Remove scrolling class first to get accurate width measurement
         currentTrackTitleElement.classList.remove('scrolling-title');
-        
+
         // Get the width of the title and its container
         const titleContainer = currentTrackTitleElement.parentElement;
         const titleWidth = currentTrackTitleElement.scrollWidth;
         const containerWidth = titleContainer.clientWidth;
-        
+
         // If title is wider than its container, add scrolling class
         if (titleWidth > containerWidth) {
+            // Calculate exact distance to scroll (including padding)
+            const scrollDistance = -(titleWidth + 50); // 50px for padding-right
+            currentTrackTitleElement.style.setProperty('--scroll-distance', `${scrollDistance}px`);
             currentTrackTitleElement.classList.add('scrolling-title');
-            log(`[Client] Title scrolling activated (${titleWidth}px > ${containerWidth}px)`);
+            log(`[Client] Title scrolling activated (${titleWidth}px > ${containerWidth}px, distance: ${scrollDistance}px)`);
         } else {
             log(`[Client] Title fits container (${titleWidth}px <= ${containerWidth}px)`);
         }
@@ -898,6 +901,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check if title needs scrolling
             setTimeout(() => {
                 if (title.scrollWidth > titleContainer.clientWidth) {
+                    // Calculate exact distance to scroll (including padding)
+                    const scrollDistance = -(title.scrollWidth + 20); // 20px for padding-right
+                    title.style.setProperty('--scroll-distance', `${scrollDistance}px`);
                     title.classList.add('scrolling-title');
                 }
             }, 100); // Small delay to ensure DOM is fully rendered

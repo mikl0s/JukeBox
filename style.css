@@ -48,6 +48,7 @@ a#download-link { line-height: 1; flex-shrink: 0; margin-right: 8px; color: inhe
     left: 0;
     top: 0;
     white-space: nowrap;
+    will-change: transform; /* Optimize animation performance */
 }
 
 /* Pause animation on hover */
@@ -56,8 +57,8 @@ a#download-link { line-height: 1; flex-shrink: 0; margin-right: 8px; color: inhe
 }
 
 @keyframes marquee {
-    0% { left: 0; }
-    100% { left: -100%; }
+    0% { transform: translateX(0); }
+    100% { transform: translateX(var(--scroll-distance, -100%)); }
 }
 
 /* Container for header controls */
@@ -155,6 +156,7 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
     animation: scroll-playlist-title 8s linear infinite;
     animation-play-state: running; /* Always scroll if needed */
     padding-right: 20px; /* Space after text before it repeats */
+    will-change: transform; /* Optimize animation performance */
 }
 
 .playlist-item:hover .playlist-item-title.scrolling-title {
@@ -163,10 +165,10 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--secondary-color)
 
 @keyframes scroll-playlist-title {
     0% {
-        left: 0;
+        transform: translateX(0);
     }
     100% {
-        left: -100%;
+        transform: translateX(var(--scroll-distance, -100%));
     }
 }
 
