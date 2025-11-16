@@ -685,6 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
         log(`[Client] loadSong: Checks passed index ${currentSongIndex}, filename: ${songFileName}`);
         const folderPath = currentSource === 'youtube' ? '/youtube' : '/music';
         const songUrl = `${folderPath}/${songFileName}.mp3`;
+        log(`[Client] loadSong: Setting audio src to: ${songUrl} (currentSource: ${currentSource})`);
         if (audioPlayer) audioPlayer.src = songUrl;
         if (currentTrackTitleElement) currentTrackTitleElement.textContent = song.title;
         if (downloadLink) downloadLink.href = songUrl;
@@ -910,7 +911,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!playlistElement) return;
 
         // Update playlist container class based on current view
-        playlistElement.className = currentView === 'list' ? 'playlist-list' : 'playlist-grid';
+        const newClassName = currentView === 'list' ? 'playlist-list' : 'playlist-grid';
+        log(`[Client] populatePlaylist: currentView=${currentView}, setting className to ${newClassName}`);
+        playlistElement.className = newClassName;
         playlistElement.innerHTML = '';
 
         if (songs.length === 0) {
@@ -1397,12 +1400,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear audio player
         if (audioPlayer) {
             audioPlayer.pause();
-            audioPlayer.src = '';
-            try {
-                audioPlayer.load();
-            } catch (e) {
-                // Expected error for empty source
-            }
+            audioPlayer.removeAttribute('src');
+            audioPlayer.load();
         }
 
         // Update source BEFORE fetching
@@ -1446,19 +1445,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function switchView(newView) {
-        if (newView === currentView) return; // Already in this view
+        if (newView === currentView) {
+            log(`[Client] Already in ${newView} view`);
+            return;
+        }
 
-        log(`[Client] Switching view from ${currentView} to ${newView}`);
+        log(`[Client] === VIEW SWITCH: ${currentView} -> ${newView} ===`);
         currentView = newView;
         updateViewButtons();
 
         // Refetch playlist with metadata if switching to list view
+        log(`[Client] Refetching playlist for view ${newView} with metadata: ${newView === 'list'}`);
         await fetchPlaylist(currentSource);
+        log(`[Client] Fetched ${songs.length} songs, now populating with ${newView} view`);
 
         // Repopulate playlist with new view
         populatePlaylist();
+        log(`[Client] Playlist element className: ${playlistElement?.className}`);
 
         saveToLocalStorage();
+        log(`[Client] === VIEW SWITCH COMPLETE: ${currentView} ===`);
     }
 
     function updateViewButtons() {
