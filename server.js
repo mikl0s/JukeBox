@@ -145,30 +145,12 @@ async function scanDirectoryRecursive(directory, baseDir = directory) {
 
 // Helper function to get music from a specific directory
 async function getMusicFromDirectory(directory, source = 'music', includeMetadata = false) {
-    // 1. Read directory (recursively for YouTube to scan Mixed/, Album folders, etc.)
+    // 1. Read directory recursively for both sources (to support subdirectories)
     let currentMusicFiles = [];
 
     try {
-        if (source === 'youtube') {
-            // Recursively scan all subdirectories for YouTube source
-            currentMusicFiles = await scanDirectoryRecursive(directory);
-        } else {
-            // For music source, only scan top level (original behavior)
-            const files = await fs.readdir(directory);
-            const readDirPromises = files.map(async (file) => {
-                const filePath = path.join(directory, file);
-                try {
-                    const stats = await fs.stat(filePath);
-                    if (stats.isFile() && path.extname(file).toLowerCase() === allowedExtension) {
-                        return path.basename(file, allowedExtension);
-                    }
-                } catch (statErr) {
-                    console.warn(`[Server] Error stating file ${filePath}:`, statErr.message);
-                }
-                return null;
-            });
-            currentMusicFiles = (await Promise.all(readDirPromises)).filter(Boolean);
-        }
+        // Always use recursive scanning to support subdirectories
+        currentMusicFiles = await scanDirectoryRecursive(directory);
     } catch (dirErr) {
         console.error(`[Server] Error reading ${source} directory "${directory}":`, dirErr);
         return [];
